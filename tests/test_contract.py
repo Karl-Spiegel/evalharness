@@ -175,8 +175,7 @@ def test_schema_parses_and_declares_draft_2020_12(name: str) -> None:
 
 def test_every_fixture_record_validates() -> None:
     fixtures = sorted(FIXTURES.glob("*.jsonl"))
-    if not fixtures:
-        pytest.skip("tests/fixtures/*.jsonl does not exist yet; the statistics lane writes it")
+    assert fixtures, "tests/fixtures/*.jsonl is missing; finding nothing must fail, not pass"
     schema = _load(CONTRACT / "record.schema.json")
     errors = [
         f"{path.name}:{n}: {error}"

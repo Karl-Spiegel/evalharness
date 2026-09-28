@@ -158,3 +158,15 @@ The headline divides by `cases_run` (the count of records for that arm). The det
 - **Contract lane:** `docs/contract/record.schema.json`, `docs/contract/coverage.schema.json`, `docs/protocol.md`, the four proposed rows appended to `docs/DECISIONS.md`, and `README.md`. No Python. Two tests are allowed: that each schema parses and that each fixture file validates, using `jsonschema` only if the lane can justify the dependency in its report; otherwise a minimal validator in `tests/` is acceptable but must not become a package module.
 - **Statistics lane:** `src/evalharness/stats.py` and `tests/test_stats.py`, plus the two fixture files. No CLI changes.
 - **Verdict lane (after merge):** `src/evalharness/verdict.py`, the `verdict` subcommand in `cli.py` replacing the sample `greeting`, `tests/test_verdict.py`. Deletes `greeting` and its test.
+
+## Clarifications after the lane reports (2026-09-29)
+
+The body above stays as launched. These settle what the contract lane reported as ambiguous.
+
+- A case that produced no answer has a record with `failure_class` `no_answer` and a null response. "Cases run" is the count of records for the arm. There is no such thing as a case with no record.
+- `criteria` uses `additionalProperties` to hold the verdict schema; `provenance.sampling` stays open. Everywhere else `additionalProperties: false` holds.
+- Under `priced`, `amount`, `currency` and `price_snapshot_date` are all non-null. Under the other bases `amount` is null.
+- Per-criterion detail divides, for each criterion, by the count of cases where that criterion's verdict is `pass` or `fail`. The register row 1 says so.
+- All three fixture criteria gate `overall`.
+- The verdict command trusts `overall` as stored; recomputing it belongs to the runner (#2).
+- A test that finds no fixtures fails; it never skips.
