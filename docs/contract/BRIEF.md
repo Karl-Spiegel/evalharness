@@ -170,3 +170,6 @@ The body above stays as launched. These settle what the contract lane reported a
 - All three fixture criteria gate `overall`.
 - The verdict command trusts `overall` as stored; recomputing it belongs to the runner (#2).
 - A test that finds no fixtures fails; it never skips.
+- `paired_t_bound(confidence: float = 0.95)`: Python `Literal` cannot hold floats; a confidence not in the table raises `ValueError` (caller error, not `None`).
+- `T_CRITICAL: Mapping[float, Mapping[int | float, float]]`, with `math.inf` as the key for the normal-quantile row. A df between table rows uses the row below (the wider bound); above 120 the normal quantile.
+- A `no_answer` record carries `unscored` on every criterion and `judge: null`, so `overall` is `unscored`; it counts in the headline denominator.
