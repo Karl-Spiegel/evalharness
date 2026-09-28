@@ -1,0 +1,5 @@
+# Toolchain pins. `mise install` on a dev machine; jdx/mise-action in CI.
+# uv reads .python-version; mise puts the same interpreter and uv on PATH.
+[tools]
+python = "3.14"
+uv = "0.12"

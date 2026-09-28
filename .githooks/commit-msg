@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""commit-msg: strip harness attribution trailers.
+
+The patterns mirror the fleet-wide ~/.git-hooks/commit-msg, which this repo's
+hooksPath replaces. Subject-line style is a convention, not a gate; see AGENTS.md.
+"""
+
+import re
+import sys
+from pathlib import Path
+
+STRIP = [
+    re.compile(r"^\s*(🤖\s*)?Generated (with|by) \[?(Claude|Copilot|Codex|Gemini|Kimi|Grok|Cursor|AI)\b", re.IGNORECASE),
+    re.compile(r"^\s*Co-Authored-By:\s*(Claude|Copilot|Codex|Gemini|Kimi|Grok|Cursor|ChatGPT|GPT)\b", re.IGNORECASE),
+    re.compile(r"^\s*Claude-Session:\s*https://claude\.ai/code/"),
+]
+
+if len(sys.argv) < 2:
+    sys.exit(0)
+path = Path(sys.argv[1])
+kept: list[str] = []
+stripped = 0
+for line in path.read_text(encoding="utf-8").split("\n"):
+    if any(p.search(line) for p in STRIP):
+        stripped += 1
+        continue
+    kept.append(line)
+while kept and not kept[-1].strip():
+    kept.pop()
+if stripped:
+    path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+    print(f"commit-msg: stripped {stripped} attribution line(s)", file=sys.stderr)

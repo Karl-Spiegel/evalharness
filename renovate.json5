@@ -1,0 +1,16 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended", ":semanticCommits", "group:allNonMajor", "schedule:weekly"],
+  // A weekly lockfile refresh moves transitive dependencies without a PR per package.
+  lockFileMaintenance: { enabled: true },
+  packageRules: [
+    // Dev-group minor and patch updates merge on their own once CI is green.
+    // Runtime dependencies and every major update wait for a human.
+    {
+      matchManagers: ["pep621"],
+      matchDepTypes: ["dependency-groups"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+    },
+  ],
+}

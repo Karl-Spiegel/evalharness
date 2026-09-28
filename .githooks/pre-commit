@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+"""pre-commit: ruff-fix and format the staged Python files, re-stage them, then typecheck.
+
+Armed once per clone by `uv run poe hooks` (git config core.hooksPath .githooks).
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from _lib import out, sh, tool
+
+staged = [f for f in out(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"]).split("\0") if f]
+code = [f for f in staged if f.endswith((".py", ".pyi"))]
+if not code:
+    sys.exit(0)
+
+ruff = tool("ruff")
+if sh([*ruff, "check", "--fix", "--output-format", "concise", *code]) != 0:
+    sys.exit(1)
+if sh([*ruff, "format", *code]) != 0:
+    sys.exit(1)
+if sh(["git", "add", "--", *code]) != 0:
+    sys.exit(1)
+sys.exit(sh([*tool("pyrefly"), "check", "--output-format", "min-text", "--summary=none"]))

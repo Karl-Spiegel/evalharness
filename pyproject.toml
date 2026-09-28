@@ -1,0 +1,165 @@
+[project]
+name = "evalharness"
+version = "0.1.0"
+description = "A record-first harness for LLM evals: one result record per case, campaign statistics, and a protocol that never renders absence as zero."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.14"
+dependencies = [
+    "anthropic>=1.8.0",
+    "pydantic>=2.13.5",
+]
+
+[project.scripts]
+evalharness = "evalharness.cli:main"
+
+[dependency-groups]
+# The gate. `uv sync` installs this group by default. Ranges are minimums; uv.lock pins.
+dev = [
+  "ruff>=0.16.9",
+  "pyrefly>=1.3.1",
+  "pytest>=9.1.1",
+  "pytest-xdist>=3.8.0",
+  "pytest-randomly>=5.0.0",
+  "pytest-cov>=7.1.0",
+  "pytest-socket>=0.8.1",
+  "deptry>=0.25.1",
+  "poethepoet>=0.48.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-version = ">=0.12"
+
+# ---------------------------------------------------------------------------
+# The gate: `uv run poe check`. The agent, the pre-push hook, and CI run it.
+# ---------------------------------------------------------------------------
+[tool.poe.tasks]
+fmt = "ruff format ."
+lint = "ruff check ."
+fix = ["_fix_lint", "fmt"]
+_fix_lint = "ruff check --fix ."
+typecheck = ["_typecheck_project", "_typecheck_hooks"]
+_typecheck_project = "pyrefly check"
+# pyrefly skips dot-directories at its glob layer, so the hooks are checked by explicit path.
+_typecheck_hooks.shell = "pyrefly check --search-path .claude/hooks .claude/hooks/*.py .githooks/_lib.py"
+test = "pytest -n auto --cov"
+deps = "deptry ."
+check = ["lint", "typecheck", "test", "deps"]
+hooks = "git config core.hooksPath .githooks"
+
+# ---------------------------------------------------------------------------
+# Lint and format: ruff. An explicit rule list, not ALL (ruff's own advice:
+# ALL enables new rules silently on every upgrade). Add a rule the second time
+# an agent makes the mistake it catches.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "F", "E", "W",      # pyflakes, pycodestyle
+  "I",                # isort
+  "N",                # pep8-naming
+  "UP",               # pyupgrade (target py314: `type` aliases, PEP 695 generics)
+  "ANN",              # every def annotated; ANN401 bans Any
+  "ASYNC",            # blocking calls in async code
+  "S",                # bandit
+  "BLE",              # no bare `except Exception`
+  "B",                # bugbear
+  "A",                # shadowed builtins
+  "C4",               # comprehensions
+  "DTZ",              # naive datetimes
+  "T10",              # no debugger calls
+  "EM",               # exception messages in a variable
+  "ISC",              # implicit string concatenation
+  "ICN",              # import conventions
+  "LOG", "G",         # logging
+  "PIE",
+  "T20",              # no print (per-file ignore for CLIs and hooks)
+  "PT",               # pytest style
+  "Q",                # quotes
+  "RSE", "RET",       # raise and return style
+  "SLF",              # private member access
+  "SIM",              # simplify
+  "TID",              # no relative imports
+  "ARG",              # unused arguments
+  "PTH",              # pathlib over os.path
+  "ERA",              # no commented-out code
+  "PL",               # pylint
+  "TRY",              # exception handling
+  "FLY", "PERF", "FURB",
+  "RUF",
+  "D",                # docstrings, google style
+  "PYI",              # stub files
+]
+ignore = [
+  # Conflicts with the formatter (ruff docs, "Conflicting lint rules").
+  "E111", "E114", "E117", "D206", "D300", "Q000", "Q001", "Q002", "Q003", "ISC001", "ISC002",
+  # Docstrings on modules, packages, magic methods, and __init__ add noise, not information.
+  "D100", "D104", "D105", "D107",
+  # Long messages belong in the exception class; EM already forces a variable.
+  "TRY003",
+  # Magic-value comparisons are usually fine in application code.
+  "PLR2004",
+  # Keyword-only parameters are the Python way to pass options; PLR0917 still caps positional ones.
+  "PLR0913",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "ANN", "D", "SLF001", "ARG", "PLR0913", "PLC2701"]
+".claude/hooks/*.py" = ["T201", "S603", "S607"]
+".githooks/*.py" = ["T201", "S603", "S607"]
+"src/*/cli.py" = ["T201"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------
+# Types: pyrefly, strict preset. Every implicit Any is an error.
+# ---------------------------------------------------------------------------
+[tool.pyrefly]
+project-includes = ["src/**/*.py", "tests/**/*.py"]
+# `.` makes `tests` importable the way pytest imports it (rootdir on sys.path).
+search-path = ["src", "."]
+python-version = "3.14"
+preset = "strict"
+output-format = "min-text"
+
+# ---------------------------------------------------------------------------
+# Tests: hermetic by configuration (see tests/conftest.py for the rest).
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --tb=short --no-header -ra -p no:cacheprovider --strict-markers --strict-config --disable-socket --allow-unix-socket"
+xfail_strict = true
+filterwarnings = ["error"]
+markers = [
+  "full_scale: runs at production scale; its node id must be in FULL_SCALE_TESTS (tests/conftest.py)",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+# A floor, not a target. Never lower it to pass; raise it when the suite earns it.
+fail_under = 80
+show_missing = true
+skip_covered = true
+
+[tool.deptry]
+known_first_party = ["evalharness"]
+
+[tool.deptry.per_rule_ignores]
+# The Claude Code hooks import their sibling helper module by name.
+DEP001 = ["_common"]

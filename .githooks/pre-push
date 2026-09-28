@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+"""pre-push: the full gate. CI runs the same command."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from _lib import sh, tool
+
+sys.exit(sh([*tool("poe"), "check"]))
