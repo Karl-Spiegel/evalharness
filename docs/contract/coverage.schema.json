@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Karl-Spiegel/evalharness/docs/contract/coverage.schema.json",
+  "title": "evalharness coverage record",
+  "description": "One record per run of one arm: what the run covered and what the pre-flight checks found. A value the run did not produce is null, never 0 or an empty string.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "arm",
+    "case_set_sha256",
+    "cases_defined",
+    "cases_run",
+    "cases_judged",
+    "clock",
+    "fixture_manifest_sha256",
+    "checks",
+    "commit"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "The version of this coverage contract. A reader refuses a version it does not know.",
+      "const": "1"
+    },
+    "arm": {
+      "description": "The label of the configuration under test, as in the result records.",
+      "type": "string",
+      "minLength": 1
+    },
+    "case_set_sha256": {
+      "description": "The lowercase hex SHA-256 over the sorted case ids and their definitions, so two runs on different case sets cannot pass as comparable.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "cases_defined": {
+      "description": "The number of cases in the case set.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "cases_run": {
+      "description": "The number of cases the arm ran. This is the headline denominator.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "cases_judged": {
+      "description": "The number of cases with an overall of pass or fail. This is the denominator of per-criterion detail.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "clock": {
+      "description": "The clock the fixtures saw during the run.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pinned_at", "source"],
+      "properties": {
+        "pinned_at": {
+          "description": "The time the fixture clock was pinned to. Null when the run used the live clock.",
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "source": {
+          "description": "Where the pinned time came from. Null when the run used the live clock.",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "fixture_manifest_sha256": {
+      "description": "The lowercase hex SHA-256 of the fixture manifest the run used. Null when the run used no fixtures.",
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "checks": {
+      "description": "Every pre-flight check and its result. A warning lives here, never only in printed output.",
+      "type": "array",
+      "items": {
+        "description": "One pre-flight check.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "result", "reason"],
+        "properties": {
+          "name": {
+            "description": "The name of the check.",
+            "type": "string",
+            "minLength": 1
+          },
+          "result": {
+            "description": "ok: the check passed. warn: the run went ahead and the warning is recorded. refuse: the check stopped the run.",
+            "enum": ["ok", "warn", "refuse"]
+          },
+          "reason": {
+            "description": "Why the check gave its result. Null when the check gave no reason.",
+            "type": ["string", "null"]
+          }
+        }
+      }
+    },
+    "commit": {
+      "description": "The commit under test. Null when the run was not from a commit.",
+      "type": ["string", "null"]
+    }
+  }
+}
