@@ -35,7 +35,7 @@ The judge returns one verdict per criterion. The harness computes `overall` from
 
 ## Why the headline divides by every case run
 
-The headline pass rate is passes over every case the arm ran. A case that failed, stayed unscored, or gave no answer counts against the arm. If the denominator were only the cases the judge could grade, an arm would score better by crashing. Per-criterion detail divides by the judged count, because it describes the answers the judge saw.
+The headline pass rate is passes over every case the arm ran. A case that failed, stayed unscored, or gave no answer counts against the arm. If the denominator were only the cases the judge could grade, an arm would score better by crashing. Per-criterion detail divides, for each criterion, by the cases where the judge scored that criterion, because it describes the answers the judge saw.
 
 ## What exists today
 
