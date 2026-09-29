@@ -180,3 +180,7 @@ The body above stays as launched. These settle what the contract lane reported a
 - The schema is located through the package's `__file__`, so the command works from a source checkout and not from an installed wheel. Known limit; the first ticket that ships a wheel moves the schemas.
 - The verdict command validates at runtime, so the minimal validator lives in `evalharness.schema`, not in a test file. `jsonschema` was rejected: the two schemas use a small set of keywords, and the validator raises on any keyword it does not know, so a schema that outgrows it fails loud.
 - The record schema enforces two invariants the body only described: `criteria` has at least one entry, and a record with `judge: null` has `overall: unscored`. The full `overall` recomputation stays with the runner (#2).
+
+## Override after review (2026-09-29)
+
+Karl overrode the body's "standard library only" rule for the statistics: as with cryptography, never roll your own when a strong reference implementation exists. `cohen_kappa` calls `statsmodels.stats.inter_rater.cohens_kappa`, `krippendorff_alpha` calls `krippendorff.alpha`, and `paired_t_bound` takes its quantile from `scipy.stats.t.ppf`, so `T_CRITICAL` and the row-below rule are gone and any confidence in (0, 1) is accepted. `paired_flips` (a count) and `single_run_rule` (a minted constant) stay as this repo's code. The worked-example tests now prove the references are called right.

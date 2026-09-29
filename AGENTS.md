@@ -19,7 +19,7 @@ Keep it under 80 lines. Put long procedures in `.claude/skills/`, path-scoped ru
 - **Types.** Every def is annotated. No `Any` (ruff `ANN401`), no `cast` without a comment, no `# type: ignore` or `# pyrefly: ignore` without a reason after it. Fix the type. pyrefly runs in `strict` preset.
 - **Tests.** Never weaken a test to make it pass: no `skip`, no `xfail`, no deleted cases, no lowered `fail_under`. If the test is wrong, say so. Tests live in `tests/`, one behaviour per test, hermetic: no network (pytest-socket blocks it), no `$HOME`, no credentials, no sleeps, no timing assertions. Production-scale fixtures need the `full_scale` marker and a row in `FULL_SCALE_TESTS`.
 - **Hands off.** `uv.lock` and `.env*` (a hook denies these). Generated files: change the generator.
-- **Dependencies.** Say why before you add one. Prefer the standard library. `deptry` fails the gate on an unused or undeclared import.
+- **Dependencies.** Say why before you add one. Prefer the standard library, except for a statistical or numerical method: call the reference implementation (scipy, statsmodels, the field's canonical package), never a hand-rolled formula, and keep a worked-example test that proves the call is right. `deptry` fails the gate on an unused or undeclared import.
 - **Absent is not zero.** A missing value is `None` or a typed unavailable state, never `0` or `""`.
 - **No employer content.** Nothing from an employer repository enters this repo: no code, identifier, case name, fixture, price, result file or number. Designs only, restated in this repo's words.
 - **No take-home content.** Nothing from a hiring assignment enters this repo: no case, document, expected decision or prompt. The same rule; the same reason.
