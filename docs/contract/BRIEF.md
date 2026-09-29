@@ -173,3 +173,8 @@ The body above stays as launched. These settle what the contract lane reported a
 - `paired_t_bound(confidence: float = 0.95)`: Python `Literal` cannot hold floats; a confidence not in the table raises `ValueError` (caller error, not `None`).
 - `T_CRITICAL: Mapping[float, Mapping[int | float, float]]`, with `math.inf` as the key for the normal-quantile row. A df between table rows uses the row below (the wider bound); above 120 the normal quantile.
 - A `no_answer` record carries `unscored` on every criterion and `judge: null`, so `overall` is `unscored`; it counts in the headline denominator.
+- The example verdict line in the body computed per-criterion cells under the older judged-count rule. Under the settled rule the fixtures print `correctness A 9/11 B 11/12 · completeness A 8/11 B 9/12 · faithfulness A 10/11 B 9/11`; the fixtures are unchanged so the difference stays visible.
+- Pairs are keyed by `repeat:case_id`, since a case id recurs once per repeat. A duplicate `(case_id, repeat)` within one file is an error, exit 2.
+- Counts of records that exist print as real numbers even when zero; only a quantity with no input prints `n/a`.
+- The bound prints as `bound <net> ± <half-width> pp (<confidence>, <n> repeats)`, in percentage points of pass rate per repeat.
+- The schema is located through the package's `__file__`, so the command works from a source checkout and not from an installed wheel. Known limit; the first ticket that ships a wheel moves the schemas.
