@@ -1,12 +1,8 @@
 """Tests for evalharness.stats. Each statistic is checked against its cited worked example."""
 
-import math
-import statistics
-
 import pytest
 
 from evalharness.stats import (
-    T_CRITICAL,
     TBound,
     Verdict,
     cohen_kappa,
@@ -176,9 +172,17 @@ def test_paired_t_bound_is_none_with_fewer_than_two_diffs() -> None:
     assert paired_t_bound([1.0]) is None
 
 
-def test_paired_t_bound_rejects_an_untabulated_confidence() -> None:
-    with pytest.raises(ValueError, match="confidence must be one of"):
-        paired_t_bound([1.0, 2.0], confidence=0.9)
+def test_paired_t_bound_rejects_a_confidence_outside_the_open_unit_interval() -> None:
+    with pytest.raises(ValueError, match="strictly between 0 and 1"):
+        paired_t_bound([1.0, 2.0], confidence=1.0)
+
+
+def test_paired_t_bound_at_99_percent_is_wider_than_at_95() -> None:
+    diffs = [1.0, 2.0, 4.0, 3.0]
+    narrow, wide = paired_t_bound(diffs, 0.95), paired_t_bound(diffs, 0.99)
+    assert narrow is not None
+    assert wide is not None
+    assert wide.half_width > narrow.half_width
 
 
 @pytest.mark.parametrize(
@@ -189,21 +193,3 @@ def test_paired_t_bound_rejects_an_untabulated_confidence() -> None:
 def test_t_bound_clear_of_zero(mean: float, clear: bool) -> None:
     bound = TBound(n=10, df=9, mean=mean, half_width=0.5, confidence=0.95)
     assert bound.clear_of_zero is clear
-
-
-@pytest.mark.parametrize("confidence", [0.95, 0.99])
-def test_t_critical_holds_the_rows_the_brief_names(confidence: float) -> None:
-    assert set(T_CRITICAL[confidence]) == {*range(1, 31), 40, 60, 120, math.inf}
-
-
-@pytest.mark.parametrize(
-    ("df", "tabulated_df"),
-    [(9, 9), (35, 30), (119, 60), (120, 120), (121, math.inf)],
-    ids=["on-a-row", "between-rows", "below-120", "at-120", "above-120"],
-)
-def test_bound_takes_the_critical_value_at_or_below_df(df: int, tabulated_df: float) -> None:
-    diffs = [float(i) for i in range(df + 1)]
-    bound = paired_t_bound(diffs, 0.99)
-    assert bound is not None
-    expected = T_CRITICAL[0.99][tabulated_df] * statistics.stdev(diffs) / math.sqrt(df + 1)
-    assert bound.half_width == pytest.approx(expected)

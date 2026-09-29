@@ -1,103 +1,25 @@
 """Campaign statistics: paired flips, agreement, the single-run rule and the paired-t bound.
 
-Every function is pure and uses the standard library only. A function returns `None` when its
-input cannot support the statistic; the docstring states the condition. Absent is never zero.
+Every function is pure. Agreement coefficients and the t quantile come from reference
+implementations (statsmodels, the `krippendorff` package, scipy); this module writes only the
+paired count and the constant it minted, and its tests prove the reference is called right.
+A function returns `None` when its input cannot support the statistic; the docstring states the
+condition. Absent is never zero.
 """
 
 import math
 import statistics
-from collections import Counter, defaultdict
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from fractions import Fraction
-from typing import Final, Literal
+from typing import Literal
+
+import numpy as np
+from krippendorff import alpha as _krippendorff_alpha
+from scipy.stats import t as _student_t
+from statsmodels.stats.inter_rater import cohens_kappa as _cohens_kappa
 
 type Verdict = Literal["pass", "fail", "unscored"]
-
-# Two-sided critical values of Student's t: T_CRITICAL[confidence][df]. The 0.95 row is the
-# 0.975 quantile and the 0.99 row is the 0.995 quantile.
-# Source for df 1..30, 40, 60 and the infinity row (the normal quantile): NIST/SEMATECH
-# e-Handbook of Statistical Methods, section 1.3.6.7.2, "Critical Values of the Student's t
-# Distribution", https://www.itl.nist.gov/div898/handbook/eda/section3/eda3672.htm
-# (columns 0.975 and 0.995). NIST tabulates df 1..100 and infinity, so df 120 comes from
-# "Critical Values for Student's t-Distribution", Purdue University STAT 503,
-# https://www.stat.purdue.edu/~lfindsen/stat503/t-Dist.pdf (columns 0.025 and 0.005), which
-# agrees with NIST on every row the two tables share. Both fetched 2026-09-29.
-# The key math.inf holds the normal quantile, used for every df above 120.
-T_CRITICAL: Final[Mapping[float, Mapping[int | float, float]]] = {
-    0.95: {
-        1: 12.706,
-        2: 4.303,
-        3: 3.182,
-        4: 2.776,
-        5: 2.571,
-        6: 2.447,
-        7: 2.365,
-        8: 2.306,
-        9: 2.262,
-        10: 2.228,
-        11: 2.201,
-        12: 2.179,
-        13: 2.160,
-        14: 2.145,
-        15: 2.131,
-        16: 2.120,
-        17: 2.110,
-        18: 2.101,
-        19: 2.093,
-        20: 2.086,
-        21: 2.080,
-        22: 2.074,
-        23: 2.069,
-        24: 2.064,
-        25: 2.060,
-        26: 2.056,
-        27: 2.052,
-        28: 2.048,
-        29: 2.045,
-        30: 2.042,
-        40: 2.021,
-        60: 2.000,
-        120: 1.980,
-        math.inf: 1.960,
-    },
-    0.99: {
-        1: 63.657,
-        2: 9.925,
-        3: 5.841,
-        4: 4.604,
-        5: 4.032,
-        6: 3.707,
-        7: 3.499,
-        8: 3.355,
-        9: 3.250,
-        10: 3.169,
-        11: 3.106,
-        12: 3.055,
-        13: 3.012,
-        14: 2.977,
-        15: 2.947,
-        16: 2.921,
-        17: 2.898,
-        18: 2.878,
-        19: 2.861,
-        20: 2.845,
-        21: 2.831,
-        22: 2.819,
-        23: 2.807,
-        24: 2.797,
-        25: 2.787,
-        26: 2.779,
-        27: 2.771,
-        28: 2.763,
-        29: 2.756,
-        30: 2.750,
-        40: 2.704,
-        60: 2.660,
-        120: 2.617,
-        math.inf: 2.576,
-    },
-}
 
 
 @dataclass(frozen=True)
@@ -160,6 +82,9 @@ def paired_flips(a: Mapping[str, Verdict], b: Mapping[str, Verdict]) -> PairedFl
 def cohen_kappa(a: Sequence[str], b: Sequence[str]) -> float | None:
     """Return Cohen's kappa for two raters who label the same items in the same order.
 
+    The coefficient is `statsmodels.stats.inter_rater.cohens_kappa` over the square
+    contingency table of the two label sequences; this function builds the table.
+
     Returns `None` when there are no items, when the two sequences differ in length, or when
     fewer than two categories appear over both raters (chance agreement is then 1 and kappa is
     0/0).
@@ -171,59 +96,18 @@ def cohen_kappa(a: Sequence[str], b: Sequence[str]) -> float | None:
     n = len(a)
     if n < 1 or len(b) != n:
         return None
-    count_a = Counter(a)
-    count_b = Counter(b)
-    if len(count_a.keys() | count_b.keys()) < 2:
+    categories = sorted(set(a) | set(b))
+    if len(categories) < 2:
         return None
-    observed = sum(1 for x, y in zip(a, b, strict=True) if x == y) / n
-    chance = sum(count_a[k] * count_b[k] for k in count_a) / (n * n)
-    return (observed - chance) / (1 - chance)
-
-
-def _ordinal_ranks(values: set[str]) -> dict[str, int] | None:
-    """Return each value's integer rank, or `None` when a value is not an integer string."""
-    ranks: dict[str, int] = {}
-    for value in values:
-        try:
-            ranks[value] = int(value)
-        except ValueError:
-            return None
-    return ranks
-
-
-def _coincidences(pairable: Sequence[Sequence[str]]) -> dict[tuple[str, str], Fraction]:
-    """Return the coincidence matrix of the pairable units.
-
-    Each ordered pair of values within a unit of m values adds 1 / (m - 1) to its cell.
-    """
-    coincidence: defaultdict[tuple[str, str], Fraction] = defaultdict(Fraction)
-    for unit in pairable:
-        weight = Fraction(1, len(unit) - 1)
-        for i, c in enumerate(unit):
-            for j, k in enumerate(unit):
-                if i != j:
-                    coincidence[c, k] += weight
-    return coincidence
-
-
-def _ordinal_delta(
-    margins: Mapping[str, Fraction], ranks: Mapping[str, int]
-) -> dict[tuple[str, str], Fraction]:
-    """Return the ordinal squared difference for every pair of values.
-
-    For values c <= k in rank order: (sum of n_g for g from c to k - (n_c + n_k) / 2) ** 2,
-    with n_g the coincidence margins (Krippendorff 2011, section D).
-    """
-    order = sorted(margins, key=lambda v: ranks[v])
-    delta: dict[tuple[str, str], Fraction] = {}
-    for lo, c in enumerate(order):
-        for hi in range(lo, len(order)):
-            k = order[hi]
-            between = sum((margins[order[g]] for g in range(lo, hi + 1)), Fraction(0))
-            d = (between - (margins[c] + margins[k]) / 2) ** 2
-            delta[c, k] = d
-            delta[k, c] = d
-    return delta
+    index = {c: i for i, c in enumerate(categories)}
+    table = np.zeros((len(categories), len(categories)), dtype=np.int64)
+    for x, y in zip(a, b, strict=True):
+        table[index[x], index[y]] += 1
+    kappa: object = _cohens_kappa(table, return_results=False)
+    if not isinstance(kappa, float | np.floating):
+        msg = f"statsmodels returned {type(kappa).__name__}, not a number"
+        raise TypeError(msg)
+    return float(kappa)
 
 
 def krippendorff_alpha(
@@ -232,9 +116,11 @@ def krippendorff_alpha(
 ) -> float | None:
     """Return Krippendorff's alpha over units rated by any number of raters.
 
-    `units[i]` holds the ratings of unit i, one per rater, `None` where a rater gave none. Only
-    units with two or more ratings are pairable. At the ordinal level every value must be an
-    integer string (for example the 0..5 `graded` score); the integers give the order.
+    The coefficient is `krippendorff.alpha` (Castro, https://github.com/pln-fing-udelar/fast-krippendorff)
+    over a raters-by-units matrix; this function builds the matrix and codes the values.
+    `units[i]` holds the ratings of unit i, one per rater, `None` where a rater gave none. At
+    the ordinal level every value must be an integer string (for example the 0..5 `graded`
+    score); the integers give the order.
 
     Returns `None` when fewer than two units have two or more ratings, when the pairable values
     hold only one distinct value (expected disagreement is 0 and alpha is 0/0), or, at the
@@ -244,29 +130,26 @@ def krippendorff_alpha(
     University of Pennsylvania, section C: 4 observers, 12 units, 7 missing values; nominal
     alpha = 0.743, and section D gives the same data as ordinal, alpha = 0.815.
     """
-    pairable = [[v for v in unit if v is not None] for unit in units]
-    pairable = [unit for unit in pairable if len(unit) >= 2]
+    pairable = [unit for unit in units if sum(v is not None for v in unit) >= 2]
     if len(pairable) < 2:
         return None
-    coincidence = _coincidences(pairable)
-    margins: defaultdict[str, Fraction] = defaultdict(Fraction)
-    for (c, _), o in coincidence.items():
-        margins[c] += o
-    if len(margins) < 2:
+    values = {v for unit in pairable for v in unit if v is not None}
+    if len(values) < 2:
         return None
-    if level == "nominal":
-        delta = {(c, k): Fraction(int(c != k)) for c in margins for k in margins}
-    else:
-        ranks = _ordinal_ranks(set(margins))
-        if ranks is None:
+    if level == "ordinal":
+        try:
+            code = {v: float(int(v)) for v in values}
+        except ValueError:
             return None
-        delta = _ordinal_delta(margins, ranks)
-    n = sum(margins.values(), Fraction(0))
-    observed = sum((o * delta[pair] for pair, o in coincidence.items()), Fraction(0))
-    expected = sum(
-        (margins[c] * margins[k] * delta[c, k] for c in margins for k in margins), Fraction(0)
-    )
-    return float(1 - (n - 1) * observed / expected)
+    else:
+        code = {v: float(i) for i, v in enumerate(sorted(values))}
+    raters = max(len(unit) for unit in pairable)
+    matrix = np.full((raters, len(pairable)), np.nan)
+    for j, unit in enumerate(pairable):
+        for i, v in enumerate(unit):
+            if v is not None:
+                matrix[i, j] = code[v]
+    return float(_krippendorff_alpha(reliability_data=matrix, level_of_measurement=level))
 
 
 @dataclass(frozen=True)
@@ -360,29 +243,17 @@ class TBound:
         return self.lower > 0 or self.upper < 0
 
 
-def _critical_value(confidence: float, df: int) -> float:
-    """Return the tabulated critical value for df.
-
-    A df between two table rows takes the row below it, which has the larger critical value
-    and so the wider, conservative bound. A df above 120 takes the normal quantile.
-    """
-    row = T_CRITICAL[confidence]
-    if df > 120:
-        return row[math.inf]
-    return row[max(d for d in row if d <= df)]
-
-
 def paired_t_bound(diffs: Sequence[float], confidence: float = 0.95) -> TBound | None:
     """Return the two-sided Student-t bound on the mean of paired differences.
 
     The half-width is t(confidence, n - 1) * s / sqrt(n), with s the sample standard deviation
-    (n - 1). The critical value comes from `T_CRITICAL`; see `_critical_value` for df between
-    rows and above 120.
+    (n - 1) and the critical value the (1 + confidence) / 2 quantile of Student's t from
+    `scipy.stats.t.ppf`.
 
     Returns `None` when there are fewer than 2 differences.
 
     Raises:
-        ValueError: when `confidence` is not a key of `T_CRITICAL` (0.95 or 0.99).
+        ValueError: when `confidence` is not strictly between 0 and 1.
 
     Worked example: Student's sleep data (Student 1908, "The probable error of a mean",
     Biometrika 6(1), 1-25; the R `datasets::sleep` data), 10 patients, differences of drug 2
@@ -390,18 +261,18 @@ def paired_t_bound(diffs: Sequence[float], confidence: float = 0.95) -> TBound |
     2.4598858 (Chang, "Cookbook for R", t-test, http://www.cookbook-r.com/Statistical_analysis/t-test/),
     a half-width of 0.880.
     """
-    if confidence not in T_CRITICAL:
-        msg = f"confidence must be one of {sorted(T_CRITICAL)}, got {confidence}"
+    if not 0 < confidence < 1:
+        msg = f"confidence must be strictly between 0 and 1, got {confidence}"
         raise ValueError(msg)
     n = len(diffs)
     if n < 2:
         return None
     df = n - 1
-    sd = statistics.stdev(diffs)
+    critical = float(_student_t.ppf((1 + confidence) / 2, df))
     return TBound(
         n=n,
         df=df,
         mean=statistics.fmean(diffs),
-        half_width=_critical_value(confidence, df) * sd / math.sqrt(n),
+        half_width=critical * statistics.stdev(diffs) / math.sqrt(n),
         confidence=confidence,
     )
