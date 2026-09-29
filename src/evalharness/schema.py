@@ -26,6 +26,7 @@ KEYWORDS = frozenset(
         "required",
         "properties",
         "additionalProperties",
+        "minProperties",
         "items",
         "minimum",
         "maximum",
@@ -93,9 +94,12 @@ def _as_list(node: Json) -> Sequence[Json]:
 
 
 def _object_errors(value: Mapping[str, Json], schema: Schema, path: str) -> list[str]:
-    """Return the errors from the object keywords: required, properties, additionalProperties."""
+    """Return the errors from the object keywords: required, minProperties, properties, extras."""
     required = _as_list(schema.get("required", []))
     errors = [f"{path}: missing {key!r}" for key in required if str(key) not in value]
+    min_properties = schema.get("minProperties")
+    if isinstance(min_properties, int) and len(value) < min_properties:
+        errors.append(f"{path}: fewer than {min_properties} properties")
     properties = as_schema(schema.get("properties", {}))
     extra = schema.get("additionalProperties", True)
     for key, item in value.items():

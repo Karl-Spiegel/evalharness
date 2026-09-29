@@ -1,6 +1,7 @@
 """Tests for evalharness.stats. Each statistic is checked against its cited worked example."""
 
 import math
+import statistics
 
 import pytest
 
@@ -8,7 +9,6 @@ from evalharness.stats import (
     T_CRITICAL,
     TBound,
     Verdict,
-    _critical_value,
     cohen_kappa,
     krippendorff_alpha,
     paired_flips,
@@ -201,5 +201,9 @@ def test_t_critical_holds_the_rows_the_brief_names(confidence: float) -> None:
     [(9, 9), (35, 30), (119, 60), (120, 120), (121, math.inf)],
     ids=["on-a-row", "between-rows", "below-120", "at-120", "above-120"],
 )
-def test_critical_value_takes_the_row_at_or_below_df(df: int, tabulated_df: float) -> None:
-    assert _critical_value(0.99, df) == T_CRITICAL[0.99][tabulated_df]
+def test_bound_takes_the_critical_value_at_or_below_df(df: int, tabulated_df: float) -> None:
+    diffs = [float(i) for i in range(df + 1)]
+    bound = paired_t_bound(diffs, 0.99)
+    assert bound is not None
+    expected = T_CRITICAL[0.99][tabulated_df] * statistics.stdev(diffs) / math.sqrt(df + 1)
+    assert bound.half_width == pytest.approx(expected)

@@ -35,26 +35,32 @@ class Record:
 
 
 def _as_verdict(value: Json) -> Verdict:
-    """Return value as a verdict; the schema has already checked it."""
+    """Return value as a verdict; raise on anything but the three literals."""
     if value == "pass":
         return "pass"
     if value == "fail":
         return "fail"
-    return "unscored"
+    if value == "unscored":
+        return "unscored"
+    msg = f"not a verdict: {value!r}; validate the record first"
+    raise TypeError(msg)
 
 
 def _record(value: Json) -> Record:
     """Return the verdict fields of a decoded record that has passed the schema."""
     if not isinstance(value, Mapping):
-        value = {}
+        msg = "record is not an object; validate the record first"
+        raise TypeError(msg)
     case_id, repeat, criteria = value.get("case_id"), value.get("repeat"), value.get("criteria")
     if not (isinstance(case_id, str) and isinstance(repeat, int) and isinstance(criteria, Mapping)):
         msg = "record fields do not have their schema types; validate the record first"
         raise TypeError(msg)
-    verdicts = {
-        name: _as_verdict(item["verdict"] if isinstance(item, Mapping) else None)
-        for name, item in criteria.items()
-    }
+    verdicts: dict[str, Verdict] = {}
+    for name, item in criteria.items():
+        if not isinstance(item, Mapping):
+            msg = f"criterion {name!r} is not an object; validate the record first"
+            raise TypeError(msg)
+        verdicts[name] = _as_verdict(item["verdict"])
     return Record(case_id, repeat, _as_verdict(value.get("overall")), verdicts)
 
 
@@ -164,7 +170,8 @@ def _bound(a: Sequence[Record], b: Sequence[Record]) -> str:
     common = sorted(rate_a.keys() & rate_b.keys())
     bound = paired_t_bound([float(rate_b[k] - rate_a[k]) for k in common])
     if bound is None:
-        return f"bound {NA} ({len(common)} repeat{'' if len(common) == 1 else 's'})"
+        n = len(common)
+        return f"bound {NA} ({n} {'repeat' if n == 1 else 'shared repeats'})"
     return (
         f"bound {bound.mean:+.1f} ± {bound.half_width:.1f} pp "
         f"({bound.confidence:.0%}, {bound.n} repeats)"

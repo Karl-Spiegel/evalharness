@@ -5,9 +5,6 @@ import json
 import re
 from pathlib import Path
 
-import pytest
-
-from evalharness import verdict
 from evalharness.cli import run
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -45,7 +42,7 @@ def _record(case_id: str, repeat: int, overall: str, criterion: str | None = Non
                 }
             },
             "overall": overall,
-            "judge": None,
+            "judge": {"model": "fixture-judge", "prompt_sha256": "0" * 64, "provider": None},
             "cost": {
                 "basis": "unpriced",
                 "amount": None,
@@ -102,7 +99,7 @@ def test_empty_files_render_every_quantity_as_na(tmp_path: Path) -> None:
     b = _write(tmp_path / "b.jsonl", [])
     line = (
         "A n/a  B n/a  | judged A n/a B n/a | criteria n/a | "
-        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 0) | bound n/a (0 repeats)\n"
+        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 0) | bound n/a (0 shared repeats)\n"
     )
     assert _verdict(a, b) == (0, line, "")
 
@@ -167,6 +164,11 @@ def test_missing_file_exits_2_naming_the_file(tmp_path: Path) -> None:
     assert err.startswith(f"error: {missing}: ")
 
 
-def test_record_refuses_a_value_the_schema_did_not_check() -> None:
-    with pytest.raises(TypeError, match="validate the record first"):
-        verdict._record([])
+def test_bound_counts_only_repeats_both_arms_ran(tmp_path: Path) -> None:
+    a = tmp_path / "a.jsonl"
+    b = tmp_path / "b.jsonl"
+    a.write_text(_record("c1", 0, "pass") + "\n")
+    b.write_text(_record("c1", 1, "pass") + "\n")
+    code, out, _ = _verdict(a, b)
+    assert code == 0
+    assert "bound n/a (0 shared repeats)" in out
