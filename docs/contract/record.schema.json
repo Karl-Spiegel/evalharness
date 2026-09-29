@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Karl-Spiegel/evalharness/main/docs/contract/record.schema.json",
+  "title": "evalharness result record",
+  "description": "One result for one case, in one arm, on one repeat. A value the run did not produce is null, never 0 or an empty string.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "case_id",
+    "arm",
+    "repeat",
+    "response_text",
+    "response_sha256",
+    "criteria",
+    "overall",
+    "judge",
+    "cost",
+    "latency",
+    "failure_class",
+    "provenance",
+    "started_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "The version of this record contract. A reader refuses a version it does not know.",
+      "const": "1"
+    },
+    "case_id": {
+      "description": "The identifier of the case. It is the same across every arm and every repeat, so records pair by it.",
+      "type": "string",
+      "minLength": 1
+    },
+    "arm": {
+      "description": "The label of the configuration under test.",
+      "type": "string",
+      "minLength": 1
+    },
+    "repeat": {
+      "description": "The zero-based index of this run of the case in this arm. A single run is repeat 0.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "response_text": {
+      "description": "The answer the system under test produced. Null when the system produced no answer; an empty string is an answer, not an absence.",
+      "type": ["string", "null"]
+    },
+    "response_sha256": {
+      "description": "The lowercase hex SHA-256 of response_text encoded as UTF-8. Null exactly when response_text is null.",
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "criteria": {
+      "description": "The judge's verdict for each criterion, keyed by criterion name. The judge supplies these; it never supplies overall. At least one criterion.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "description": "The verdict on one criterion.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["verdict", "gating", "reason", "graded"],
+        "properties": {
+          "verdict": {
+            "description": "pass or fail when the criterion was judged; unscored when it could not be judged. Unscored is not a fail and not a pass.",
+            "enum": ["pass", "fail", "unscored"]
+          },
+          "gating": {
+            "description": "True when this criterion takes part in the overall computation.",
+            "type": "boolean"
+          },
+          "reason": {
+            "description": "The judge's stated reason for the verdict. Null when the judge gave none.",
+            "type": ["string", "null"]
+          },
+          "graded": {
+            "description": "A graded score on a 0 to 5 scale, when the criterion carries one. Null when it does not; null is not 0.",
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 5
+          }
+        }
+      }
+    },
+    "overall": {
+      "description": "The case verdict, computed by the harness from criteria and never supplied by a judge: fail if any gating criterion is fail; else unscored if any gating criterion is unscored; else pass.",
+      "enum": ["pass", "fail", "unscored"]
+    },
+    "judge": {
+      "description": "The judge that produced the criteria verdicts. Null when the record was not judged.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["model", "prompt_sha256", "provider"],
+      "properties": {
+        "model": {
+          "description": "The model identifier of the judge, as requested.",
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_sha256": {
+          "description": "The lowercase hex SHA-256 of the judge prompt template, so a prompt change is visible in the record.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "provider": {
+          "description": "The provider that served the judge. Null when unknown.",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "cost": {
+      "description": "What the run of this case cost, with its basis. Absent cost is a basis, never a zero amount.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis", "amount", "currency", "price_snapshot_date"],
+      "properties": {
+        "basis": {
+          "description": "priced: an amount from a dated price list. self_hosted: the run used local compute with no per-call price. unpriced: no price is known.",
+          "enum": ["priced", "self_hosted", "unpriced"]
+        },
+        "amount": {
+          "description": "The cost in currency units. Non-null only when basis is priced. A zero amount is legal only under priced, with its snapshot date.",
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "currency": {
+          "description": "The currency of amount. Required when basis is priced.",
+          "type": ["string", "null"]
+        },
+        "price_snapshot_date": {
+          "description": "The date of the price list that gave amount. Required when basis is priced.",
+          "type": ["string", "null"],
+          "format": "date"
+        }
+      },
+      "if": {
+        "properties": { "basis": { "const": "priced" } }
+      },
+      "then": {
+        "properties": {
+          "amount": { "type": "number" },
+          "currency": { "type": "string" },
+          "price_snapshot_date": { "type": "string" }
+        }
+      },
+      "else": {
+        "properties": {
+          "amount": { "type": "null" }
+        }
+      }
+    },
+    "latency": {
+      "description": "Raw timings in milliseconds. The model latency is wall_ms minus harness_ms, derived in reports and never stored.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_ms", "harness_ms"],
+      "properties": {
+        "wall_ms": {
+          "description": "The wall-clock time from the start of the case to its end.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "harness_ms": {
+          "description": "The part of wall_ms the harness itself spent, outside the system under test.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "failure_class": {
+      "description": "How the run of the case failed, or none. no_answer: the system returned no answer. parse_error: the answer could not be parsed. tool_error: a tool call failed. iteration_cap: the system hit its step limit. timeout: the run hit its time limit. framework_error: the harness or framework failed.",
+      "enum": [
+        "none",
+        "no_answer",
+        "parse_error",
+        "tool_error",
+        "iteration_cap",
+        "timeout",
+        "framework_error"
+      ]
+    },
+    "provenance": {
+      "description": "What served the case, as the provider reported it, not as requested.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["served_model", "provider", "sampling", "weights_digest"],
+      "properties": {
+        "served_model": {
+          "description": "The model identifier the provider reports it served. Null when the provider does not report one.",
+          "type": ["string", "null"]
+        },
+        "provider": {
+          "description": "The provider or endpoint that served the case. Null when unknown.",
+          "type": ["string", "null"]
+        },
+        "sampling": {
+          "description": "The sampling and reasoning settings in effect, as provider-specific key-value pairs. Null when unknown. Its keys are open because they differ by provider.",
+          "type": ["object", "null"]
+        },
+        "weights_digest": {
+          "description": "A digest of the model weights, where one exists (self-hosted models). Null otherwise.",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "started_at": {
+      "description": "The UTC time the case started, as an RFC 3339 date-time with a Z or +00:00 offset.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(Z|\\+00:00)$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "response_text": { "type": "null" } }
+      },
+      "then": {
+        "properties": { "response_sha256": { "type": "null" } }
+      },
+      "else": {
+        "properties": { "response_sha256": { "type": "string" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "judge": { "type": "null" } }
+      },
+      "then": {
+        "properties": { "overall": { "const": "unscored" } }
+      }
+    }
+  ]
+}
