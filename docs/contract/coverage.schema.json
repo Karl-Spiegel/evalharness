@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Karl-Spiegel/evalharness/docs/contract/coverage.schema.json",
+  "$id": "https://raw.githubusercontent.com/Karl-Spiegel/evalharness/main/docs/contract/coverage.schema.json",
   "title": "evalharness coverage record",
   "description": "One record per run of one arm: what the run covered and what the pre-flight checks found. A value the run did not produce is null, never 0 or an empty string.",
   "type": "object",
@@ -43,7 +43,7 @@
       "minimum": 0
     },
     "cases_judged": {
-      "description": "The number of cases with an overall of pass or fail. This is the denominator of per-criterion detail.",
+      "description": "The number of cases with an overall of pass or fail. Per-criterion detail has its own denominator: the cases where that criterion is pass or fail.",
       "type": "integer",
       "minimum": 0
     },
@@ -54,9 +54,10 @@
       "required": ["pinned_at", "source"],
       "properties": {
         "pinned_at": {
-          "description": "The time the fixture clock was pinned to. Null when the run used the live clock.",
+          "description": "The UTC time the fixture clock was pinned to, as an RFC 3339 date-time with a Z or +00:00 offset. Null when the run used the live clock.",
           "type": ["string", "null"],
-          "format": "date-time"
+          "format": "date-time",
+          "pattern": "(Z|\\+00:00)$"
         },
         "source": {
           "description": "Where the pinned time came from. Null when the run used the live clock.",

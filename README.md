@@ -23,7 +23,7 @@ One record per case, per arm, per repeat. The full contract is `docs/contract/re
 - `provenance`: the model and provider that served the case, the sampling settings, the weights digest.
 - `started_at`: the UTC start time.
 
-Each run of an arm also writes one coverage record (`docs/contract/coverage.schema.json`): the case-set digest, the counts of cases defined, run and judged, the pinned clock, and every pre-flight check with its result.
+Each run of an arm also writes one coverage record (`docs/contract/coverage.schema.json`). It holds the case-set digest, the counts of cases defined, run and judged, the pinned clock, and every pre-flight check with its result.
 
 ## Why absent is never zero
 

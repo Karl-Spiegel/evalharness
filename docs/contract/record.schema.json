@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Karl-Spiegel/evalharness/docs/contract/record.schema.json",
+  "$id": "https://raw.githubusercontent.com/Karl-Spiegel/evalharness/main/docs/contract/record.schema.json",
   "title": "evalharness result record",
   "description": "One result for one case, in one arm, on one repeat. A value the run did not produce is null, never 0 or an empty string.",
   "type": "object",
@@ -51,8 +51,9 @@
       "pattern": "^[0-9a-f]{64}$"
     },
     "criteria": {
-      "description": "The judge's verdict for each criterion, keyed by criterion name. The judge supplies these; it never supplies overall.",
+      "description": "The judge's verdict for each criterion, keyed by criterion name. The judge supplies these; it never supplies overall. At least one criterion.",
       "type": "object",
+      "minProperties": 1,
       "additionalProperties": {
         "description": "The verdict on one criterion.",
         "type": "object",
@@ -178,7 +179,7 @@
       ]
     },
     "provenance": {
-      "description": "What actually served the case, as reported by the provider, not as requested.",
+      "description": "What served the case, as the provider reported it, not as requested.",
       "type": "object",
       "additionalProperties": false,
       "required": ["served_model", "provider", "sampling", "weights_digest"],
@@ -218,6 +219,14 @@
       },
       "else": {
         "properties": { "response_sha256": { "type": "string" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "judge": { "type": "null" } }
+      },
+      "then": {
+        "properties": { "overall": { "const": "unscored" } }
       }
     }
   ]

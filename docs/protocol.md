@@ -11,11 +11,11 @@ A report that skips a step says which step and why.
 
 4. **Assert provenance after every run.** Confirm the served model, the provider, the sampling and reasoning settings, and the weights digest where one exists. A run whose provenance differs from the plan is a run of a different arm.
 
-5. **Require the full case count.** An arm that did not run every defined case is aborted, not reported. A partial arm compares a different case set.
+5. **Require the full case count.** Abort an arm that did not run every defined case; do not report it. A partial arm compares a different case set.
 
 6. **Archive, never delete.** A superseded result moves to an archive with a written reason beside it. The record of a mistake is evidence for the next campaign.
 
-7. **Fix the headline denominator.** The denominator is a ruling, decided once, and every report obeys it: the headline pass rate is passes over every case the arm ran. A case whose `overall` is `fail` or `unscored`, or that produced no answer, counts in the denominator and not in the numerator. Per-criterion detail divides by the judged count instead, where a judged case has an `overall` of `pass` or `fail`. A smaller denominator would let an arm score better by crashing.
+7. **Fix the headline denominator.** The denominator is a ruling, decided once, and every report obeys it: the headline pass rate is passes over every case the arm ran. A case whose `overall` is `fail` or `unscored`, or that produced no answer, counts in the denominator and not in the numerator. Per-criterion detail divides, for each criterion, by the count of cases where that criterion's verdict is `pass` or `fail`; an `unscored` criterion drops its case from that criterion's detail only. A smaller denominator would let an arm score better by crashing.
 
 8. **Interleave the arms.** Run the arms under comparison in alternation, not one after the other. Drift in the provider, the network, or the time of day then falls on every arm alike.
 
