@@ -97,6 +97,25 @@ Artefacts when it runs: `results3/` and `report3.html` in the workspace; a one-p
 `docs/climb-gate/skill-climb.md` that exports the loop's per-query results as kit records and
 gates iteration N against N-1 with the stage 1 segment.
 
+**Stage 2 preparation (2026-10-16, no run yet):** in the climb workspace (path above):
+`patched/scripts/run_eval.py` writes one sidecar line per run (outcome, wall and harness ms,
+served model from the stream's init event, description digest) to `$CLIMB_RUNS_FILE`;
+`export_records.py` turns the sidecar plus `loop.json` into kit records, one file per iteration,
+each validated against the contract, judge `trigger-detector`, cost `unpriced`;
+`gate.py` runs the kit's verdict between two iterations and reads the threshold from this
+file's "Seam 1 answers" as `threshold: p < 0.05`; with no ruling it exits 3 and decides nothing.
+Self-tested on synthetic data. The eval set is `ticket-eval.json` (ten and ten), the skill copy
+`skill-ticket/`, the filtered skills `skills-filtered-ticket/`, the empty root `proj/`. Launch,
+once Karl has reviewed the eval set and the host shows 16 GB free:
+
+```
+cd proj && CLIMB_RUNS_FILE=../runs-ticket.jsonl IS_SANDBOX=1 PYTHONPATH=../patched \
+  env -u CLAUDECODE ../with-hidden-skill.sh ../skills-filtered-ticket \
+  python3 -m scripts.run_loop --eval-set ../ticket-eval.json --skill-path ../skill-ticket \
+  --model opus --max-iterations 5 --runs-per-query 3 --num-workers 10 --timeout 180 \
+  --holdout 0.4 --verbose --report ../report-ticket.html --results-dir ../results-ticket
+```
+
 ### Seam 2: Karl's choice for stage 2
 
 The three options above, with the recommendation: change what is measured, or drop it. The
