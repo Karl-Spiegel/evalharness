@@ -13,7 +13,7 @@ Stage 1 of the climb-gate program (`docs/climb-gate/plan.md`): the one statistic
 - `README.md` and `docs/protocol.md` step 9: one sentence each naming the per-case test as the climb-step gate and the repeat bound as the repeat-noise measure.
 - `docs/climb-gate/plan.md`: the program plan, both stages and seams.
 
-On branch `spike/12-decision-models`, `spikes/decision-models/CLIMB-C.md` now carries this segment's output in its tables (commit 722a511) in place of a sign test computed by hand.
+On branch `spike/12-decision-models`, `spikes/decision-models/CLIMB-C.md` now carries this segment's output in its tables (commit 774d0b8) in place of a sign test computed by hand.
 
 ## Why
 
