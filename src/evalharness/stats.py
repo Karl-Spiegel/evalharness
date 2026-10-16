@@ -80,6 +80,49 @@ def paired_flips(a: Mapping[str, Verdict], b: Mapping[str, Verdict]) -> PairedFl
     )
 
 
+def case_flips(
+    a: Mapping[str, Mapping[int, Verdict]], b: Mapping[str, Mapping[int, Verdict]]
+) -> PairedFlips:
+    """Return the paired table over cases, each case decided once across its shared repeats.
+
+    `a` and `b` map a case id to its verdicts by repeat. For each case, the repeats both arms
+    judged (pass or fail) are the shared repeats; the arm with more passes over them wins the
+    case, a tie with passes is `both`, a tie without is `neither`. A case with no shared judged
+    repeat is excluded. One case is one pair, however many repeats it ran, so a test over this
+    table never counts a repeated case twice. The function never returns `None`: an empty table
+    is a real count.
+
+    Worked example: ten cases run once, b passes eight that a fails and a passes two that b
+    fails: a_only = 2, b_only = 8. The same ten cases run twice with identical outcomes give the
+    same table, where the per-repeat table of `paired_flips` would give a_only = 4, b_only = 16.
+    """
+    a_only = b_only = both = neither = excluded = 0
+    for case_id in a.keys() | b.keys():
+        ra, rb = a.get(case_id, {}), b.get(case_id, {})
+        shared = [r for r in ra.keys() & rb.keys() if ra[r] != "unscored" and rb[r] != "unscored"]
+        if not shared:
+            excluded += 1
+            continue
+        pa = sum(ra[r] == "pass" for r in shared)
+        pb = sum(rb[r] == "pass" for r in shared)
+        if pb > pa:
+            b_only += 1
+        elif pa > pb:
+            a_only += 1
+        elif pa:
+            both += 1
+        else:
+            neither += 1
+    return PairedFlips(
+        n_paired=a_only + b_only + both + neither,
+        a_only=a_only,
+        b_only=b_only,
+        both=both,
+        neither=neither,
+        excluded=excluded,
+    )
+
+
 @dataclass(frozen=True)
 class ExactMcNemar:
     """The exact McNemar test on the discordant cases of a paired table.
@@ -97,10 +140,13 @@ def exact_mcnemar(flips: PairedFlips) -> ExactMcNemar | None:
     """Return the exact McNemar test over the discordant cases of `flips`.
 
     The test is the sign test on the discordant pairs: under the null, each case the arms
-    decide differently falls to b with probability one half. The p-value comes from
-    `statsmodels.stats.contingency_tables.mcnemar(exact=True)`, which reads only the
-    off-diagonal counts. This is the per-case gate of a climb step; the paired-t bound measures
-    repeat noise and needs several repeats before it says anything.
+    decide differently falls to b with probability one half. Give it the table of `case_flips`,
+    one pair per case, not the per-repeat table of `paired_flips`: repeats of one case are not
+    independent pairs, and pooling them inflates the sample. The test is two-sided; it says
+    the arms differ, not which is better. Read the direction from `PairedFlips.net`. The
+    p-value comes from `statsmodels.stats.contingency_tables.mcnemar(exact=True)`, which reads
+    only the off-diagonal counts. This is the per-case gate of a climb step; the paired-t
+    bound measures repeat noise and needs several repeats before it says anything.
 
     Returns `None` when there are no discordant cases: the reference call would print 1.0, and a
     test that could not run is not a p-value.

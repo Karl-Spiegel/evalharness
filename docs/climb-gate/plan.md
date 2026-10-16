@@ -61,8 +61,9 @@ interleaved arm execution (a runner concern, recorded as a follow-up).
 
 Karl reviews the diff. The PR body opens with a Decisions block:
 
-1. Acceptance threshold for a climb step: proposed default, two-sided p below 0.05 on the
-   per-case test, fixed before any future climb's scores are seen. Karl accepts or rules.
+1. Acceptance threshold for a climb step: proposed default, the candidate wins more cases than
+   it loses (`net > 0`) and the two-sided per-case p is below 0.05, fixed before any future
+   climb's scores are seen; a significant loss rejects the candidate. Karl accepts or rules.
 2. Grader as judge for deterministic grading: current reading, unbound, stays on the ticket.
 3. Interleaving in the climb runner: follow-up ticket, not in this PR.
 

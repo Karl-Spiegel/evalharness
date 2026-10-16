@@ -1,6 +1,6 @@
 ## Decisions
 
-1. **Acceptance threshold for a climb step.** Proposed default: two-sided exact McNemar p below 0.05 on the per-case flips, fixed before any score of a future climb is seen. Karl accepts or rules; the answer goes under "Seam 1 answers" in `docs/climb-gate/plan.md`. No row proposed here.
+1. **Acceptance threshold for a climb step.** Proposed default: the candidate wins more cases than it loses (`net > 0`) and the two-sided exact McNemar p over the per-case flips is below 0.05, fixed before any score of a future climb is seen; a significant loss rejects the candidate. Karl accepts or rules; the answer goes under "Seam 1 answers" in `docs/climb-gate/plan.md`. No row proposed here.
 2. **A deterministic grader recorded as the judge.** The schema forces `overall` to `unscored` when `judge` is null, so an exact-match grader is recorded as a judge (`model: exact-match`, digest of the rule). Current reading, unbound, stays on the ticket.
 3. **Interleaved arm execution** (protocol step 8) in the climb runner: a follow-up ticket, drafted at `docs/climb-gate/drafts/ticket-interleave.md`. Not in this PR.
 
@@ -9,7 +9,7 @@
 Stage 1 of the climb-gate program (`docs/climb-gate/plan.md`): the one statistic the arm C prompt climb (issue #12, the decision-only models spike) lacked.
 
 - `stats.py`: `exact_mcnemar(flips)`, the exact McNemar test over the discordant cases of a `PairedFlips`, through `statsmodels.stats.contingency_tables.mcnemar(exact=True)`. Returns `None` when no case is discordant; the reference call would print 1.0, and a test that could not run is not a p-value. Worked example: Zar's deer-legs sign test, p = 0.109375.
-- `verdict.py`: one new segment after the paired flips, `per-case p 0.0708 (31 discordant)`, or `per-case p n/a (0 discordant)`. No other segment changes.
+- `verdict.py`: one new segment after the paired flips, `per-case p 0.0708 (31 discordant cases)`, or `per-case p n/a (0 discordant cases)`. The test reads one pair per case across its repeats (`case_flips`), not the per-repeat pairs of the flips segment, so repeating every case does not grow the sample. No other segment changes.
 - `README.md` and `docs/protocol.md` step 9: one sentence each naming the per-case test as the climb-step gate and the repeat bound as the repeat-noise measure.
 - `docs/climb-gate/plan.md`: the program plan, both stages and seams.
 
@@ -21,7 +21,7 @@ The climb's two steps were judged by paired flips over 400 case-runs. The kit pr
 
 ## Proof
 
-`uv run poe check` green: 55 tests, coverage 90.9%. Two new tests: the published worked example and the no-discordant `None`. Three verdict fixture lines updated for the new segment; the multi-repeat test asserts `per-case p 0.25 (3 discordant)`.
+`uv run poe check` green. New tests: the published worked example, the no-discordant `None`, `case_flips` counting a repeated case once and deciding a case by passes over shared repeats, and a verdict test proving the segment does not change when every case is repeated. Three verdict fixture lines updated for the new segment.
 
 ## Deliberately absent
 

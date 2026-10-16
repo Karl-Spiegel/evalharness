@@ -6,6 +6,7 @@ from evalharness.stats import (
     PairedFlips,
     TBound,
     Verdict,
+    case_flips,
     cohen_kappa,
     exact_mcnemar,
     krippendorff_alpha,
@@ -103,6 +104,60 @@ def test_paired_flips_excludes_and_counts_unscored_or_missing(
 ) -> None:
     flips = paired_flips(a, b)
     assert (flips.n_paired, flips.both, flips.excluded) == (1, 1, 1)
+
+
+type ByCase = dict[str, dict[int, Verdict]]
+
+
+def _deer_by_case(repeats: int) -> tuple[ByCase, ByCase]:
+    """Ten cases: b wins eight and a wins two, the same outcome in every repeat."""
+    a: ByCase = {}
+    b: ByCase = {}
+    for i in range(10):
+        wins_b = i < 8
+        for r in range(repeats):
+            a.setdefault(f"c{i}", {})[r] = "fail" if wins_b else "pass"
+            b.setdefault(f"c{i}", {})[r] = "pass" if wins_b else "fail"
+    return a, b
+
+
+def test_case_flips_counts_a_repeated_case_once() -> None:
+    once = case_flips(*_deer_by_case(1))
+    twice = case_flips(*_deer_by_case(2))
+    assert (once.n_paired, once.a_only, once.b_only) == (10, 2, 8)
+    assert twice == once
+
+
+def test_case_flips_decides_a_case_by_passes_over_shared_repeats() -> None:
+    a: dict[str, dict[int, Verdict]] = {
+        "split": {0: "pass", 1: "fail"},
+        "tie-pass": {0: "pass", 1: "pass"},
+        "tie-fail": {0: "fail"},
+        "no-shared": {0: "unscored", 1: "pass"},
+    }
+    b: dict[str, dict[int, Verdict]] = {
+        "split": {0: "pass", 1: "pass"},
+        "tie-pass": {0: "pass", 1: "pass"},
+        "tie-fail": {0: "fail"},
+        "no-shared": {0: "pass", 2: "pass"},
+    }
+    flips = case_flips(a, b)
+    assert (flips.b_only, flips.a_only, flips.both, flips.neither, flips.excluded) == (
+        1,
+        0,
+        1,
+        1,
+        1,
+    )
+    assert flips.n_paired == 3
+
+
+def test_exact_mcnemar_over_case_flips_is_unchanged_by_repeating_every_case() -> None:
+    once = exact_mcnemar(case_flips(*_deer_by_case(1)))
+    twice = exact_mcnemar(case_flips(*_deer_by_case(2)))
+    assert once is not None
+    assert twice == once
+    assert once.p_value == pytest.approx(0.109375, abs=1e-9)
 
 
 def test_exact_mcnemar_matches_zar_deer_legs_sign_test() -> None:

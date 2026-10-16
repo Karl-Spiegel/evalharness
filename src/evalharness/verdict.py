@@ -14,7 +14,14 @@ from fractions import Fraction
 from pathlib import Path
 
 from evalharness.schema import Json, Schema, validate
-from evalharness.stats import PairedFlips, Verdict, exact_mcnemar, paired_flips, paired_t_bound
+from evalharness.stats import (
+    PairedFlips,
+    Verdict,
+    case_flips,
+    exact_mcnemar,
+    paired_flips,
+    paired_t_bound,
+)
 
 NA = "n/a"
 JUDGED: frozenset[str] = frozenset({"pass", "fail"})
@@ -156,12 +163,25 @@ def _paired(flips: PairedFlips, label_a: str, label_b: str) -> str:
     )
 
 
-def _per_case(flips: PairedFlips) -> str:
-    """Return the exact McNemar segment over the discordant cases, `n/a` when there are none."""
+def _by_case(records: Sequence[Record]) -> dict[str, dict[int, Verdict]]:
+    """Return each case's verdicts by repeat."""
+    by_case: dict[str, dict[int, Verdict]] = {}
+    for r in records:
+        by_case.setdefault(r.case_id, {})[r.repeat] = r.overall
+    return by_case
+
+
+def _per_case(a: Sequence[Record], b: Sequence[Record]) -> str:
+    """Return the exact McNemar segment over cases, each decided once across its repeats.
+
+    `n/a` when no case is discordant. The per-repeat pairs of the paired-flips segment are not
+    independent when a case ran more than once, so this test reads one pair per case.
+    """
+    flips = case_flips(_by_case(a), _by_case(b))
     test = exact_mcnemar(flips)
     if test is None:
-        return f"per-case p {NA} (0 discordant)"
-    return f"per-case p {test.p_value:.3g} ({test.discordant} discordant)"
+        return f"per-case p {NA} (0 discordant cases)"
+    return f"per-case p {test.p_value:.3g} ({test.discordant} discordant cases)"
 
 
 def _rate_by_repeat(records: Sequence[Record]) -> dict[int, Fraction]:
@@ -208,4 +228,4 @@ def render(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str)
     )
     segments = [headline, judged, criteria or f"criteria {NA}"]
     flips = _flips(a, b)
-    return " | ".join([*segments, _paired(flips, label_a, label_b), _per_case(flips), _bound(a, b)])
+    return " | ".join([*segments, _paired(flips, label_a, label_b), _per_case(a, b), _bound(a, b)])
