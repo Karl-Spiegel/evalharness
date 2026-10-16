@@ -97,20 +97,26 @@ Artefacts when it runs: `results3/` and `report3.html` in the workspace; a one-p
 `docs/climb-gate/skill-climb.md` that exports the loop's per-query results as kit records and
 gates iteration N against N-1 with the stage 1 segment.
 
-**Stage 2 preparation (2026-10-16, no run yet):** in the climb workspace (path above):
-`patched/scripts/run_eval.py` writes one sidecar line per run (outcome, wall and harness ms,
-served model from the stream's init event, description digest) to `$CLIMB_RUNS_FILE`;
-`export_records.py` turns the sidecar plus `loop.json` into kit records, one file per iteration,
-each validated against the contract, judge `trigger-detector`, cost `unpriced`;
-`gate.py` runs the kit's verdict between two iterations and reads the threshold from this
-file's "Seam 1 answers" as `threshold: p < 0.05`; with no ruling it exits 3 and decides nothing.
-Self-tested on synthetic data. The eval set is `ticket-eval.json` (ten and ten), the skill copy
-`skill-ticket/`, the filtered skills `skills-filtered-ticket/`, the empty root `proj/`. Launch,
-once Karl has reviewed the eval set and the host shows 16 GB free:
+**Stage 2 tooling (2026-10-16/17):** in the climb workspace (path above). `patched/scripts/run_eval.py`
+is the skill-creator detector with four patches: it watches three turns instead of only the first
+tool call; it counts any `<skill>-skill-` candidate, not only its own suffix; each worker process
+gets its own copy of the project root (`CLIMB_ROOT_TEMPLATE`, `CLIMB_ROOTS`), because a session
+that sees several identical candidates invokes none; and it writes one sidecar line per run
+(outcome, wall and harness ms, served model from the stream's init event, description digest) to
+`$CLIMB_RUNS_FILE`. The project root is a local clone of this repo at `repo/`, not an empty dir:
+in an empty dir the queries get a text answer and no skill call. `export_records.py` turns the
+sidecar plus `loop.json` into kit records, one file per iteration, each validated against the
+contract, judge `trigger-detector`, cost `unpriced`. `gate.py` runs the kit's verdict between two
+iterations and reads the threshold from this file's "Seam 1 answers"; with no ruling it exits 3
+and decides nothing. Probe before the climb at the climb's worker count: six workers, four of
+four should-trigger fired, both should-not quiet. Three earlier stage 2 attempts measured zero
+recall and were artifacts of the traps above; their sidecars are kept as `runs-ticket-emptyroot.jsonl`.
+
+Launch:
 
 ```
-cd proj && CLIMB_RUNS_FILE=../runs-ticket.jsonl IS_SANDBOX=1 PYTHONPATH=../patched \
-  env -u CLAUDECODE ../with-hidden-skill.sh ../skills-filtered-ticket \
+cd repo && CLIMB_ROOT_TEMPLATE=$PWD CLIMB_ROOTS=../roots CLIMB_RUNS_FILE=../runs-ticket.jsonl \
+  IS_SANDBOX=1 PYTHONPATH=../patched env -u CLAUDECODE ../with-hidden-skill.sh ../skills-filtered-ticket \
   python3 -m scripts.run_loop --eval-set ../ticket-eval.json --skill-path ../skill-ticket \
   --model opus --max-iterations 5 --runs-per-query 3 --num-workers 10 --timeout 180 \
   --holdout 0.4 --verbose --report ../report-ticket.html --results-dir ../results-ticket
