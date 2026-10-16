@@ -9,7 +9,7 @@
 Stage 1 of the climb-gate program (`docs/climb-gate/plan.md`): the one statistic the arm C prompt climb (issue #12, the decision-only models spike) lacked.
 
 - `stats.py`: `exact_mcnemar(flips)`, the exact McNemar test over the discordant cases of a `PairedFlips`, through `statsmodels.stats.contingency_tables.mcnemar(exact=True)`. Returns `None` when no case is discordant; the reference call would print 1.0, and a test that could not run is not a p-value. Worked example: Zar's deer-legs sign test, p = 0.109375.
-- `verdict.py`: one new segment after the paired flips, `per-case p 0.0708 (31 discordant cases)`, or `per-case p n/a (0 discordant cases)`. The test reads one pair per case across its repeats (`case_flips`), not the per-repeat pairs of the flips segment, so repeating every case does not grow the sample. No other segment changes.
+- `verdict.py`: one new segment after the paired flips, `per-case net +5 (v2>v1 14, v1>v2 9, cases 200, p 0.541)`, with `n/a` for the p when no case is discordant and for every count when no case is paired. The table reads one pair per case across its shared repeats (`case_flips`), not the per-repeat pairs of the flips segment, so repeating every case does not grow the sample, and the segment carries its own direction because the two tables can disagree. No other segment changes.
 - `README.md` and `docs/protocol.md` step 9: one sentence each naming the per-case test as the climb-step gate and the repeat bound as the repeat-noise measure.
 - `docs/climb-gate/plan.md`: the program plan, both stages and seams.
 
@@ -21,7 +21,7 @@ The climb's two steps were judged by paired flips over 400 case-runs. The kit pr
 
 ## Proof
 
-`uv run poe check` green. New tests: the published worked example, the no-discordant `None`, `case_flips` counting a repeated case once and deciding a case by passes over shared repeats, and a verdict test proving the segment does not change when every case is repeated. Three verdict fixture lines updated for the new segment.
+`uv run poe check` green. New tests: the published worked example, the no-discordant `None`, `case_flips` counting a repeated case once and deciding a case by passes over shared repeats, a verdict test proving the segment does not change when every case is repeated, and one where the per-case direction opposes the case-run net. Three verdict fixture lines updated for the new segment.
 
 ## Deliberately absent
 

@@ -171,17 +171,25 @@ def _by_case(records: Sequence[Record]) -> dict[str, dict[int, Verdict]]:
     return by_case
 
 
-def _per_case(a: Sequence[Record], b: Sequence[Record]) -> str:
-    """Return the exact McNemar segment over cases, each decided once across its repeats.
+def _per_case(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str) -> str:
+    """Return the per-case segment: net, directional counts and exact McNemar p, over cases.
 
-    `n/a` when no case is discordant. The per-repeat pairs of the paired-flips segment are not
-    independent when a case ran more than once, so this test reads one pair per case.
+    Each case is decided once across its shared repeats, so the per-repeat pairs of the
+    paired-flips segment and this table can point in different directions; the acceptance
+    rule reads the direction and the p from this segment alone. The p is `n/a` when no case is
+    discordant; every count is `n/a` when no case is paired.
     """
     flips = case_flips(_by_case(a), _by_case(b))
     test = exact_mcnemar(flips)
-    if test is None:
-        return f"per-case p {NA} (0 discordant cases)"
-    return f"per-case p {test.p_value:.3g} ({test.discordant} discordant cases)"
+    p_value = NA if test is None else f"{test.p_value:.3g}"
+    if flips.n_paired:
+        net, b_only, a_only = f"{flips.net:+d}", str(flips.b_only), str(flips.a_only)
+    else:
+        net = b_only = a_only = NA
+    return (
+        f"per-case net {net} ({label_b}>{label_a} {b_only}, {label_a}>{label_b} {a_only}, "
+        f"cases {flips.n_paired}, p {p_value})"
+    )
 
 
 def _rate_by_repeat(records: Sequence[Record]) -> dict[int, Fraction]:
@@ -228,4 +236,5 @@ def render(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str)
     )
     segments = [headline, judged, criteria or f"criteria {NA}"]
     flips = _flips(a, b)
-    return " | ".join([*segments, _paired(flips, label_a, label_b), _per_case(a, b), _bound(a, b)])
+    per_case = _per_case(a, b, label_a, label_b)
+    return " | ".join([*segments, _paired(flips, label_a, label_b), per_case, _bound(a, b)])
