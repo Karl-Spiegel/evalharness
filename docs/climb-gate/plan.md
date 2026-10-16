@@ -98,12 +98,15 @@ Artefacts when it runs: `results3/` and `report3.html` in the workspace; a one-p
 gates iteration N against N-1 with the stage 1 segment.
 
 **Stage 2 tooling (2026-10-16/17):** in the climb workspace (path above). `patched/scripts/run_eval.py`
-is the skill-creator detector with four patches: it watches three turns instead of only the first
+is the skill-creator detector with five patches: it watches three turns instead of only the first
 tool call; it counts any `<skill>-skill-` candidate, not only its own suffix; each worker process
 gets its own copy of the project root (`CLIMB_ROOT_TEMPLATE`, `CLIMB_ROOTS`), because a session
-that sees several identical candidates invokes none; and it writes one sidecar line per run
+that sees several identical candidates invokes none; it writes one sidecar line per run
 (outcome, wall and harness ms, served model from the stream's init event, description digest) to
-`$CLIMB_RUNS_FILE`. The project root is a local clone of this repo at `repo/`, not an empty dir:
+`$CLIMB_RUNS_FILE`; and it runs every nested `claude -p` with no MCP servers
+(`--strict-mcp-config --mcp-config '{"mcpServers":{}}'`), because each run spawned the
+profile's MCP servers and the Todoist one outlived its client, about 85 MB each, 20 a minute,
+until another session's GPU jobs ran out of RAM (2026-10-17). The project root is a local clone of this repo at `repo/`, not an empty dir:
 in an empty dir the queries get a text answer and no skill call. `export_records.py` turns the
 sidecar plus `loop.json` into kit records, one file per iteration, each validated against the
 contract, judge `trigger-detector`, cost `unpriced`. `gate.py` runs the kit's verdict between two
