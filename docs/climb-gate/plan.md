@@ -142,8 +142,14 @@ Whole program (one goal, both stages, seams as recorded stops; Karl asked for th
 
 ### Seam 1 answers
 
-(Karl writes here: the threshold ruling and the PR review outcome.)
+Karl, 2026-10-16T12:56:46Z: "can we do this so I ddont nave to review yet? i dont have time". Read as: proceed
+on the proposed default; the PR review and the eval-set review are deferred, not waived.
+Unbound, stays on the ticket; no row.
+
+threshold: p < 0.05 (the proposed default, with net > 0; a significant loss rejects)
+PR #13 review: deferred by Karl, not yet reviewed.
 
 ### Seam 2 answers
 
-(Karl writes here if the stage 2 choice is not the default `ticket` climb.)
+No different choice recorded. Default: the `ticket` climb. Eval-set review deferred by Karl
+(2026-10-16T12:56:46Z, same words as seam 1); the set runs as drafted.
