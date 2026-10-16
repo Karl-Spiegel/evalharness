@@ -125,6 +125,13 @@ cd repo && CLIMB_ROOT_TEMPLATE=$PWD CLIMB_ROOTS=../roots CLIMB_RUNS_FILE=../runs
   --holdout 0.4 --verbose --report ../report-ticket.html --results-dir ../results-ticket
 ```
 
+**Stage 2 status (2026-10-17):** done. Two iterations, 120 runs, every query passing at iteration 2
+(train 12/12, test 8/8; the loop stopped on `all_passed`). Kit records under `stage2/records/`;
+gate iter1 → iter2: `per-case net +1 (1 up, 0 down, cases 20, p 1)`, no decision; the loop's tie
+rule keeps the original description. Finding: `docs/climb-gate/skill-climb.md`. Draft diff of the
+climbed description, not applied: `drafts/ticket-description.diff`. Ran at 3 workers with MCP
+disabled while another session's GPU jobs held the host's RAM.
+
 ### Seam 2: Karl's choice for stage 2
 
 The three options above, with the recommendation: change what is measured, or drop it. The
