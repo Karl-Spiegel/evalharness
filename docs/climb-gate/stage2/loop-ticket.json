@@ -1,0 +1,565 @@
+{
+  "exit_reason": "all_passed (iteration 2)",
+  "original_description": "Use when the user says \"file a ticket\", \"draft an issue\", \"open an issue for X\", \"new ticket\", asks to refine or audit an existing GitHub issue, or wants a sanity-check on an agent-filed ticket. Applies to all repos.",
+  "best_description": "Use when the user says \"file a ticket\", \"draft an issue\", \"open an issue for X\", \"new ticket\", asks to refine or audit an existing GitHub issue, or wants a sanity-check on an agent-filed ticket. Applies to all repos.",
+  "best_score": "8/8",
+  "best_train_score": "11/12",
+  "best_test_score": "8/8",
+  "final_description": "Use this skill whenever the user wants a single GitHub issue written, filed, or improved, in any phrasing. This includes \"file a ticket\", \"draft an issue\", or \"create an issue for X\". It also includes turning a bug report, reproduction steps, a feature idea, a proposal, or session notes into an issue, with or without labels such as bug or feature. Use it to refine, rewrite, groom, audit, or sanity-check an existing issue, including issues that an agent filed. It applies in every repo and package. Do not use it to list, search, or summarize existing issues. Do not use it for PR review, commits, eval runs, or multi-ticket adversarial planning; /ticket-plan does that planning.",
+  "iterations_run": 2,
+  "holdout": 0.4,
+  "train_size": 12,
+  "test_size": 8,
+  "history": [
+    {
+      "iteration": 1,
+      "description": "Use when the user says \"file a ticket\", \"draft an issue\", \"open an issue for X\", \"new ticket\", asks to refine or audit an existing GitHub issue, or wants a sanity-check on an agent-filed ticket. Applies to all repos.",
+      "train_passed": 11,
+      "train_failed": 1,
+      "train_total": 12,
+      "train_results": [
+        {
+          "query": "An agent filed issue #11 about shipping the schemas in the wheel. Sanity-check it before I accept it onto the board: scope, invariants, anything missing or overreaching.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Turn this into a GitHub issue for the api package: deals stuck at stage 3 never surface in the broker view when the lender policy has no checklist. Add the reproduction steps I just described and label it as a bug.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Create an issue proposing that the record schema gets an optional field for decision probabilities, naming the consumer that needs it and the rulings it touches.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Audit issue #12 in this repo. Is it well formed, are the clarifications resolved, does the outcome section match what the spike actually delivers? Suggest edits.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "File a ticket in this repo for adding a Langfuse exporter to the eval harness: problem, outcome, invariants, out of scope, in the house style, with labels and board placement.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Draft an issue for the flaky pre-push hook that fails when the lockfile changes but the venv is stale. Include a reproduction, the expected behaviour, and what is out of scope.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Commit my working tree changes as small logical commits with conventional commit messages.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write the daily journal entry for today from what we did in this session.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Run a cross-provider comparison on issues #4 and #5: one arm per provider, a draft PR per arm so I can compare the diffs in the GitHub UI.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Review this pull request for correctness bugs and anything that would break the record schema, and post the findings as inline comments.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Set up a weekly cron job that runs the full eval suite on Sunday night and posts the pass rate to the team channel.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "List the open issues on this repo, group them by label, and tell me which ones have no assignee.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 8,
+      "test_failed": 0,
+      "test_total": 8,
+      "test_results": [
+        {
+          "query": "Refine the wording of issue #6 so the fixture gates and the before_run hooks are two separable outcomes, and tighten the out-of-scope list.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "We need a new ticket: the runner should interleave arms case by case instead of running them one after another. Write it up properly with ordering and dependencies on the open contract PR.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Open an issue for making the verdict CLI exit 1 when arm B does not beat arm A. Cover acceptance criteria and which existing tests change.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write up a ticket for the next spike: measure Haiku 5.5 against Haiku 4.5 on the Banking77 arm, same cases, same split, with a spend cap and a one-page finding as the deliverable.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Explain what Cohen's kappa and Krippendorff's alpha measure and when to prefer one over the other for judge agreement.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Implement the exact McNemar test in stats.py with a worked-example test and wire it into the verdict line.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a Todoist task to call the accountant on Friday about the quarterly BAS and set it to priority 2.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Find my Obsidian note about the decision-only models spike and summarise what I wrote about Vercel AI Gateway.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 11,
+      "failed": 1,
+      "total": 12,
+      "results": [
+        {
+          "query": "An agent filed issue #11 about shipping the schemas in the wheel. Sanity-check it before I accept it onto the board: scope, invariants, anything missing or overreaching.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Turn this into a GitHub issue for the api package: deals stuck at stage 3 never surface in the broker view when the lender policy has no checklist. Add the reproduction steps I just described and label it as a bug.",
+          "should_trigger": true,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": false
+        },
+        {
+          "query": "Create an issue proposing that the record schema gets an optional field for decision probabilities, naming the consumer that needs it and the rulings it touches.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Audit issue #12 in this repo. Is it well formed, are the clarifications resolved, does the outcome section match what the spike actually delivers? Suggest edits.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "File a ticket in this repo for adding a Langfuse exporter to the eval harness: problem, outcome, invariants, out of scope, in the house style, with labels and board placement.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Draft an issue for the flaky pre-push hook that fails when the lockfile changes but the venv is stale. Include a reproduction, the expected behaviour, and what is out of scope.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Commit my working tree changes as small logical commits with conventional commit messages.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write the daily journal entry for today from what we did in this session.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Run a cross-provider comparison on issues #4 and #5: one arm per provider, a draft PR per arm so I can compare the diffs in the GitHub UI.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Review this pull request for correctness bugs and anything that would break the record schema, and post the findings as inline comments.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Set up a weekly cron job that runs the full eval suite on Sunday night and posts the pass rate to the team channel.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "List the open issues on this repo, group them by label, and tell me which ones have no assignee.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "description": "Use this skill whenever the user wants a single GitHub issue written, filed, or improved, in any phrasing. This includes \"file a ticket\", \"draft an issue\", or \"create an issue for X\". It also includes turning a bug report, reproduction steps, a feature idea, a proposal, or session notes into an issue, with or without labels such as bug or feature. Use it to refine, rewrite, groom, audit, or sanity-check an existing issue, including issues that an agent filed. It applies in every repo and package. Do not use it to list, search, or summarize existing issues. Do not use it for PR review, commits, eval runs, or multi-ticket adversarial planning; /ticket-plan does that planning.",
+      "train_passed": 12,
+      "train_failed": 0,
+      "train_total": 12,
+      "train_results": [
+        {
+          "query": "An agent filed issue #11 about shipping the schemas in the wheel. Sanity-check it before I accept it onto the board: scope, invariants, anything missing or overreaching.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Turn this into a GitHub issue for the api package: deals stuck at stage 3 never surface in the broker view when the lender policy has no checklist. Add the reproduction steps I just described and label it as a bug.",
+          "should_trigger": true,
+          "trigger_rate": 0.6666666666666666,
+          "triggers": 2,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Create an issue proposing that the record schema gets an optional field for decision probabilities, naming the consumer that needs it and the rulings it touches.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Audit issue #12 in this repo. Is it well formed, are the clarifications resolved, does the outcome section match what the spike actually delivers? Suggest edits.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "File a ticket in this repo for adding a Langfuse exporter to the eval harness: problem, outcome, invariants, out of scope, in the house style, with labels and board placement.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Draft an issue for the flaky pre-push hook that fails when the lockfile changes but the venv is stale. Include a reproduction, the expected behaviour, and what is out of scope.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Commit my working tree changes as small logical commits with conventional commit messages.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write the daily journal entry for today from what we did in this session.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Run a cross-provider comparison on issues #4 and #5: one arm per provider, a draft PR per arm so I can compare the diffs in the GitHub UI.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Review this pull request for correctness bugs and anything that would break the record schema, and post the findings as inline comments.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Set up a weekly cron job that runs the full eval suite on Sunday night and posts the pass rate to the team channel.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "List the open issues on this repo, group them by label, and tell me which ones have no assignee.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "test_passed": 8,
+      "test_failed": 0,
+      "test_total": 8,
+      "test_results": [
+        {
+          "query": "Refine the wording of issue #6 so the fixture gates and the before_run hooks are two separable outcomes, and tighten the out-of-scope list.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "We need a new ticket: the runner should interleave arms case by case instead of running them one after another. Write it up properly with ordering and dependencies on the open contract PR.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Open an issue for making the verdict CLI exit 1 when arm B does not beat arm A. Cover acceptance criteria and which existing tests change.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write up a ticket for the next spike: measure Haiku 5.5 against Haiku 4.5 on the Banking77 arm, same cases, same split, with a spend cap and a one-page finding as the deliverable.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Explain what Cohen's kappa and Krippendorff's alpha measure and when to prefer one over the other for judge agreement.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Implement the exact McNemar test in stats.py with a worked-example test and wire it into the verdict line.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Add a Todoist task to call the accountant on Friday about the quarterly BAS and set it to priority 2.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Find my Obsidian note about the decision-only models spike and summarise what I wrote about Vercel AI Gateway.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ],
+      "passed": 12,
+      "failed": 0,
+      "total": 12,
+      "results": [
+        {
+          "query": "An agent filed issue #11 about shipping the schemas in the wheel. Sanity-check it before I accept it onto the board: scope, invariants, anything missing or overreaching.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Turn this into a GitHub issue for the api package: deals stuck at stage 3 never surface in the broker view when the lender policy has no checklist. Add the reproduction steps I just described and label it as a bug.",
+          "should_trigger": true,
+          "trigger_rate": 0.6666666666666666,
+          "triggers": 2,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Create an issue proposing that the record schema gets an optional field for decision probabilities, naming the consumer that needs it and the rulings it touches.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Audit issue #12 in this repo. Is it well formed, are the clarifications resolved, does the outcome section match what the spike actually delivers? Suggest edits.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "File a ticket in this repo for adding a Langfuse exporter to the eval harness: problem, outcome, invariants, out of scope, in the house style, with labels and board placement.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Draft an issue for the flaky pre-push hook that fails when the lockfile changes but the venv is stale. Include a reproduction, the expected behaviour, and what is out of scope.",
+          "should_trigger": true,
+          "trigger_rate": 1.0,
+          "triggers": 3,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Commit my working tree changes as small logical commits with conventional commit messages.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Write the daily journal entry for today from what we did in this session.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Run a cross-provider comparison on issues #4 and #5: one arm per provider, a draft PR per arm so I can compare the diffs in the GitHub UI.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Review this pull request for correctness bugs and anything that would break the record schema, and post the findings as inline comments.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "Set up a weekly cron job that runs the full eval suite on Sunday night and posts the pass rate to the team channel.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        },
+        {
+          "query": "List the open issues on this repo, group them by label, and tell me which ones have no assignee.",
+          "should_trigger": false,
+          "trigger_rate": 0.0,
+          "triggers": 0,
+          "runs": 3,
+          "pass": true
+        }
+      ]
+    }
+  ]
+}
