@@ -57,6 +57,12 @@ Deliberately absent: a bootstrap interval on the pass-rate difference, a confide
 segment, any change to the record or coverage schema, any change to the climb runner, and
 interleaved arm execution (a runner concern, recorded as a follow-up).
 
+**Stage 1 status (2026-10-16):** done. PR #13 open against `contract-and-stats`, CI green, three
+review rounds (Codex `gpt-6-astra`): two REQUEST_CHANGES fixed, then APPROVE. The review changed
+the design: the test reads one pair per case across repeats (`case_flips`), and the segment
+carries its own net and counts. The spike's tables on `spike/12-decision-models` (commit
+774d0b8) carry the kit's output; v2's calibration gain reads net +4, p 0.54, noise.
+
 ### Seam 1: PR review of stage 1
 
 Karl reviews the diff. The PR body opens with a Decisions block:

@@ -177,7 +177,7 @@ def _per_case(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: s
     Each case is decided once across its shared repeats, so the per-repeat pairs of the
     paired-flips segment and this table can point in different directions; the acceptance
     rule reads the direction and the p from this segment alone. The p is `n/a` when no case is
-    discordant; every count is `n/a` when no case is paired.
+    discordant; the net and the directional counts are `n/a` when no case is paired.
     """
     flips = case_flips(_by_case(a), _by_case(b))
     test = exact_mcnemar(flips)
