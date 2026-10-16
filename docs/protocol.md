@@ -19,7 +19,7 @@ A report that skips a step says which step and why.
 
 8. **Interleave the arms.** Run the arms under comparison in alternation, not one after the other. Drift in the provider, the network, or the time of day then falls on every arm alike.
 
-9. **Measure the noise floor first.** Repeat one arm enough times to measure run-to-run variation before you trust a single-run difference. Measure quality noise and latency noise apart; one does not predict the other.
+9. **Measure the noise floor first.** Repeat one arm enough times to measure run-to-run variation before you trust a single-run difference. Measure quality noise and latency noise apart; one does not predict the other. To accept one step of a climb, read the exact McNemar test over the per-case flips, one pair per case across its repeats: the candidate must win more cases than it loses and the two-sided p must clear the threshold, so a significant loss rejects it. The repeat bound is the repeat-noise measure and is silent below several repeats.
 
 10. **Keep one append-only campaign log.** Every run, check, and decision goes into one log, in order. A correction is a new entry that cites the entry it corrects; the old entry stays.
 

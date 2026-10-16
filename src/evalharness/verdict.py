@@ -14,7 +14,14 @@ from fractions import Fraction
 from pathlib import Path
 
 from evalharness.schema import Json, Schema, validate
-from evalharness.stats import Verdict, paired_flips, paired_t_bound
+from evalharness.stats import (
+    PairedFlips,
+    Verdict,
+    case_flips,
+    exact_mcnemar,
+    paired_flips,
+    paired_t_bound,
+)
 
 NA = "n/a"
 JUDGED: frozenset[str] = frozenset({"pass", "fail"})
@@ -139,9 +146,13 @@ def _key(record: Record) -> str:
     return f"{record.repeat}:{record.case_id}"
 
 
-def _paired(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str) -> str:
-    """Return the paired-flips segment over `overall`, paired by case id and repeat."""
-    flips = paired_flips({_key(r): r.overall for r in a}, {_key(r): r.overall for r in b})
+def _flips(a: Sequence[Record], b: Sequence[Record]) -> PairedFlips:
+    """Return the paired table over `overall`, paired by case id and repeat."""
+    return paired_flips({_key(r): r.overall for r in a}, {_key(r): r.overall for r in b})
+
+
+def _paired(flips: PairedFlips, label_a: str, label_b: str) -> str:
+    """Return the paired-flips segment."""
     if flips.n_paired:
         net, b_only, a_only = f"{flips.net:+d}", str(flips.b_only), str(flips.a_only)
     else:
@@ -149,6 +160,35 @@ def _paired(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str
     return (
         f"paired net {net} ({label_b}>{label_a} {b_only}, {label_a}>{label_b} {a_only}, "
         f"n {flips.n_paired}, excluded {flips.excluded})"
+    )
+
+
+def _by_case(records: Sequence[Record]) -> dict[str, dict[int, Verdict]]:
+    """Return each case's verdicts by repeat."""
+    by_case: dict[str, dict[int, Verdict]] = {}
+    for r in records:
+        by_case.setdefault(r.case_id, {})[r.repeat] = r.overall
+    return by_case
+
+
+def _per_case(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str) -> str:
+    """Return the per-case segment: net, directional counts and exact McNemar p, over cases.
+
+    Each case is decided once across its shared repeats, so the per-repeat pairs of the
+    paired-flips segment and this table can point in different directions; the acceptance
+    rule reads the direction and the p from this segment alone. The p is `n/a` when no case is
+    discordant; the net and the directional counts are `n/a` when no case is paired.
+    """
+    flips = case_flips(_by_case(a), _by_case(b))
+    test = exact_mcnemar(flips)
+    p_value = NA if test is None else f"{test.p_value:.3g}"
+    if flips.n_paired:
+        net, b_only, a_only = f"{flips.net:+d}", str(flips.b_only), str(flips.a_only)
+    else:
+        net = b_only = a_only = NA
+    return (
+        f"per-case net {net} ({label_b}>{label_a} {b_only}, {label_a}>{label_b} {a_only}, "
+        f"cases {flips.n_paired}, p {p_value})"
     )
 
 
@@ -195,4 +235,6 @@ def render(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str)
         f"{label_b} {_fraction(_passes(judged_b), len(judged_b))}"
     )
     segments = [headline, judged, criteria or f"criteria {NA}"]
-    return " | ".join([*segments, _paired(a, b, label_a, label_b), _bound(a, b)])
+    flips = _flips(a, b)
+    per_case = _per_case(a, b, label_a, label_b)
+    return " | ".join([*segments, _paired(flips, label_a, label_b), per_case, _bound(a, b)])

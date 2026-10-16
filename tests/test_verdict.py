@@ -18,7 +18,8 @@ ARM_B = FIXTURES / "arm-b.jsonl"
 FIXTURE_LINE = (
     "A 7/12 (58%)  B 8/12 (67%)  | judged A 7/11 B 8/11 | "
     "correctness A 9/11 B 11/12 · completeness A 8/11 B 9/12 · faithfulness A 10/11 B 9/11 | "
-    "paired net +1 (B>A 2, A>B 1, n 11, excluded 1) | bound n/a (1 repeat)\n"
+    "paired net +1 (B>A 2, A>B 1, n 11, excluded 1) | "
+    "per-case net +1 (B>A 2, A>B 1, cases 11, p 1) | bound n/a (1 repeat)\n"
 )
 
 
@@ -89,7 +90,8 @@ def test_no_judged_records_render_every_judged_quantity_as_na(tmp_path: Path) ->
     b = _write(tmp_path / "b.jsonl", [_record("c1", 0, "unscored"), _record("c2", 0, "unscored")])
     line = (
         "A 0/2 (0%)  B 0/2 (0%)  | judged A n/a B n/a | correctness A n/a B n/a | "
-        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 2) | bound n/a (1 repeat)\n"
+        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 2) | "
+        "per-case net n/a (B>A n/a, A>B n/a, cases 0, p n/a) | bound n/a (1 repeat)\n"
     )
     assert _verdict(a, b) == (0, line, "")
 
@@ -99,7 +101,8 @@ def test_empty_files_render_every_quantity_as_na(tmp_path: Path) -> None:
     b = _write(tmp_path / "b.jsonl", [])
     line = (
         "A n/a  B n/a  | judged A n/a B n/a | criteria n/a | "
-        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 0) | bound n/a (0 shared repeats)\n"
+        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 0) | "
+        "per-case net n/a (B>A n/a, A>B n/a, cases 0, p n/a) | bound n/a (0 shared repeats)\n"
     )
     assert _verdict(a, b) == (0, line, "")
 
@@ -133,6 +136,9 @@ def test_multi_repeat_pair_renders_a_numeric_bound(tmp_path: Path) -> None:
     assert code == 0
     assert re.search(r"\| bound \+50\.0 ± 124\.2 pp \(95%, 3 repeats\)\n$", out)
     assert "paired net +3 (B>A 3, A>B 0, n 6, excluded 0)" in out
+    # Two cases, not six case-runs: c1 falls to b (3 passes to 2), c2 falls to b (2 to 0).
+    # Two discordant cases, both to b: two-sided exact p = 2 * (1/2)^2.
+    assert "| per-case net +2 (B>A 2, A>B 0, cases 2, p 0.5) |" in out
 
 
 def test_invalid_line_exits_2_naming_file_and_line(tmp_path: Path) -> None:
@@ -162,6 +168,48 @@ def test_missing_file_exits_2_naming_the_file(tmp_path: Path) -> None:
     code, _, err = _verdict(missing, ARM_B)
     assert code == 2
     assert err.startswith(f"error: {missing}: ")
+
+
+def test_per_case_test_does_not_grow_when_every_case_is_repeated(tmp_path: Path) -> None:
+    # Deterministic outcomes repeated under a second repeat id add no independent cases.
+    def arm(path: Path, winner_b: bool, repeats: int) -> Path:
+        rows = []
+        for i in range(10):
+            b_wins = i < 8
+            for r in range(repeats):
+                passes = (b_wins and winner_b) or (not b_wins and not winner_b)
+                rows.append(_record(f"c{i}", r, "pass" if passes else "fail"))
+        return _write(path, rows)
+
+    one = _verdict(arm(tmp_path / "a1.jsonl", False, 1), arm(tmp_path / "b1.jsonl", True, 1))[1]
+    two = _verdict(arm(tmp_path / "a2.jsonl", False, 2), arm(tmp_path / "b2.jsonl", True, 2))[1]
+    assert "| per-case net +6 (B>A 8, A>B 2, cases 10, p 0.109) |" in one
+    assert "| per-case net +6 (B>A 8, A>B 2, cases 10, p 0.109) |" in two
+    assert "paired net +12 (B>A 16, A>B 4, n 20, excluded 0)" in two
+
+
+def test_per_case_direction_can_oppose_the_case_run_net(tmp_path: Path) -> None:
+    # Three cases, three repeats. A wins c1 and c2 by one pass each; B wins c3 by three.
+    # Case-runs: B>A 3, A>B 2, net +1. Cases: A>B 2, B>A 1, net -1. The rule reads the cases.
+    a = _write(
+        tmp_path / "a.jsonl",
+        [
+            *(_record("c1", r, "pass" if r == 0 else "fail") for r in range(3)),
+            *(_record("c2", r, "pass" if r == 0 else "fail") for r in range(3)),
+            *(_record("c3", r, "fail") for r in range(3)),
+        ],
+    )
+    b = _write(
+        tmp_path / "b.jsonl",
+        [
+            *(_record("c1", r, "fail") for r in range(3)),
+            *(_record("c2", r, "fail") for r in range(3)),
+            *(_record("c3", r, "pass") for r in range(3)),
+        ],
+    )
+    out = _verdict(a, b)[1]
+    assert "paired net +1 (B>A 3, A>B 2, n 9, excluded 0)" in out
+    assert "| per-case net -1 (B>A 1, A>B 2, cases 3, p 1) |" in out
 
 
 def test_bound_counts_only_repeats_both_arms_ran(tmp_path: Path) -> None:

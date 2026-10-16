@@ -40,7 +40,7 @@ The headline pass rate is passes over every case the arm ran. A case that failed
 ## What exists today
 
 - The contract: the record and coverage schemas in `docs/contract/`, the campaign protocol in `docs/protocol.md`, and four proposed rulings in `docs/DECISIONS.md`.
-- The statistics: `src/evalharness/stats.py`, with paired flips, Cohen's kappa, Krippendorff's alpha, the single-run rule and the paired Student-t bound, each tested against a published example.
+- The statistics: `src/evalharness/stats.py`, with paired flips and their exact McNemar test, Cohen's kappa, Krippendorff's alpha, the single-run rule and the paired Student-t bound, each tested against a published example. The exact McNemar test over the discordant cases, one pair per case across its repeats, is the gate of a climb step: the candidate must win more cases than it loses and the two-sided p must clear the threshold, so a significant loss rejects it. The repeat bound measures repeat noise and needs several repeats before it says anything.
 - The verdict command: `uv run evalharness verdict --a A.jsonl --b B.jsonl` prints one line that compares two arms.
 
 ## What is deliberately absent

@@ -1,0 +1,22 @@
+--- a/.claude/skills/ticket/SKILL.md
++++ b/.claude/skills/ticket/SKILL.md
+@@ -1,9 +1,16 @@
+ ---
+ name: ticket
+ description: >
+-  Use when the user says "file a ticket", "draft an issue", "open an issue for
+-  X", "new ticket", asks to refine or audit an existing GitHub issue, or wants
+-  a sanity-check on an agent-filed ticket. Applies to all repos.
++  Use this skill whenever the user wants a single GitHub issue written,
++  filed, or improved, in any phrasing. This includes "file a ticket", "draft
++  an issue", or "create an issue for X". It also includes turning a bug
++  report, reproduction steps, a feature idea, a proposal, or session notes
++  into an issue, with or without labels such as bug or feature. Use it to
++  refine, rewrite, groom, audit, or sanity-check an existing issue, including
++  issues that an agent filed. It applies in every repo and package. Do not
++  use it to list, search, or summarize existing issues. Do not use it for PR
++  review, commits, eval runs, or multi-ticket adversarial planning;
++  /ticket-plan does that planning.
+ allowed-tools: Read, Write, Edit, Bash(gh *), Bash(git *), Bash(rg *), Bash(grep *), Bash(find *), Bash(ls *), Bash(cat *), Bash(head *), Bash(tail *), Bash(pwd *), Bash(ps *), Bash(uptime *), Bash(sysctl *), Bash(launchctl *), Bash(sqlite3 *), Bash(clawdbot *), WebFetch
+ ---
+ 
