@@ -14,7 +14,7 @@ from fractions import Fraction
 from pathlib import Path
 
 from evalharness.schema import Json, Schema, validate
-from evalharness.stats import Verdict, paired_flips, paired_t_bound
+from evalharness.stats import PairedFlips, Verdict, exact_mcnemar, paired_flips, paired_t_bound
 
 NA = "n/a"
 JUDGED: frozenset[str] = frozenset({"pass", "fail"})
@@ -139,9 +139,13 @@ def _key(record: Record) -> str:
     return f"{record.repeat}:{record.case_id}"
 
 
-def _paired(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str) -> str:
-    """Return the paired-flips segment over `overall`, paired by case id and repeat."""
-    flips = paired_flips({_key(r): r.overall for r in a}, {_key(r): r.overall for r in b})
+def _flips(a: Sequence[Record], b: Sequence[Record]) -> PairedFlips:
+    """Return the paired table over `overall`, paired by case id and repeat."""
+    return paired_flips({_key(r): r.overall for r in a}, {_key(r): r.overall for r in b})
+
+
+def _paired(flips: PairedFlips, label_a: str, label_b: str) -> str:
+    """Return the paired-flips segment."""
     if flips.n_paired:
         net, b_only, a_only = f"{flips.net:+d}", str(flips.b_only), str(flips.a_only)
     else:
@@ -150,6 +154,14 @@ def _paired(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str
         f"paired net {net} ({label_b}>{label_a} {b_only}, {label_a}>{label_b} {a_only}, "
         f"n {flips.n_paired}, excluded {flips.excluded})"
     )
+
+
+def _per_case(flips: PairedFlips) -> str:
+    """Return the exact McNemar segment over the discordant cases, `n/a` when there are none."""
+    test = exact_mcnemar(flips)
+    if test is None:
+        return f"per-case p {NA} (0 discordant)"
+    return f"per-case p {test.p_value:.3g} ({test.discordant} discordant)"
 
 
 def _rate_by_repeat(records: Sequence[Record]) -> dict[int, Fraction]:
@@ -195,4 +207,5 @@ def render(a: Sequence[Record], b: Sequence[Record], label_a: str, label_b: str)
         f"{label_b} {_fraction(_passes(judged_b), len(judged_b))}"
     )
     segments = [headline, judged, criteria or f"criteria {NA}"]
-    return " | ".join([*segments, _paired(a, b, label_a, label_b), _bound(a, b)])
+    flips = _flips(a, b)
+    return " | ".join([*segments, _paired(flips, label_a, label_b), _per_case(flips), _bound(a, b)])

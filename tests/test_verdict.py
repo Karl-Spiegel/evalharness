@@ -18,7 +18,8 @@ ARM_B = FIXTURES / "arm-b.jsonl"
 FIXTURE_LINE = (
     "A 7/12 (58%)  B 8/12 (67%)  | judged A 7/11 B 8/11 | "
     "correctness A 9/11 B 11/12 · completeness A 8/11 B 9/12 · faithfulness A 10/11 B 9/11 | "
-    "paired net +1 (B>A 2, A>B 1, n 11, excluded 1) | bound n/a (1 repeat)\n"
+    "paired net +1 (B>A 2, A>B 1, n 11, excluded 1) | per-case p 1 (3 discordant) | "
+    "bound n/a (1 repeat)\n"
 )
 
 
@@ -89,7 +90,8 @@ def test_no_judged_records_render_every_judged_quantity_as_na(tmp_path: Path) ->
     b = _write(tmp_path / "b.jsonl", [_record("c1", 0, "unscored"), _record("c2", 0, "unscored")])
     line = (
         "A 0/2 (0%)  B 0/2 (0%)  | judged A n/a B n/a | correctness A n/a B n/a | "
-        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 2) | bound n/a (1 repeat)\n"
+        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 2) | per-case p n/a (0 discordant) | "
+        "bound n/a (1 repeat)\n"
     )
     assert _verdict(a, b) == (0, line, "")
 
@@ -99,7 +101,8 @@ def test_empty_files_render_every_quantity_as_na(tmp_path: Path) -> None:
     b = _write(tmp_path / "b.jsonl", [])
     line = (
         "A n/a  B n/a  | judged A n/a B n/a | criteria n/a | "
-        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 0) | bound n/a (0 shared repeats)\n"
+        "paired net n/a (B>A n/a, A>B n/a, n 0, excluded 0) | per-case p n/a (0 discordant) | "
+        "bound n/a (0 shared repeats)\n"
     )
     assert _verdict(a, b) == (0, line, "")
 
@@ -133,6 +136,8 @@ def test_multi_repeat_pair_renders_a_numeric_bound(tmp_path: Path) -> None:
     assert code == 0
     assert re.search(r"\| bound \+50\.0 ± 124\.2 pp \(95%, 3 repeats\)\n$", out)
     assert "paired net +3 (B>A 3, A>B 0, n 6, excluded 0)" in out
+    # Three discordant cases, all to b: two-sided exact p = 2 * (1/2)^3.
+    assert "| per-case p 0.25 (3 discordant) |" in out
 
 
 def test_invalid_line_exits_2_naming_file_and_line(tmp_path: Path) -> None:

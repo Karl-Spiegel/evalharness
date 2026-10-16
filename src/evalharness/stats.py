@@ -1,4 +1,4 @@
-"""Campaign statistics: paired flips, agreement, the single-run rule and the paired-t bound.
+"""Campaign statistics: paired flips, their exact test, agreement, the single-run rule, the t bound.
 
 Every function is pure. Agreement coefficients and the t quantile come from reference
 implementations (statsmodels, the `krippendorff` package, scipy); this module writes only the
@@ -17,6 +17,7 @@ from typing import Literal
 import numpy as np
 from krippendorff import alpha as _krippendorff_alpha
 from scipy.stats import t as _student_t
+from statsmodels.stats.contingency_tables import mcnemar as _mcnemar
 from statsmodels.stats.inter_rater import cohens_kappa as _cohens_kappa
 
 type Verdict = Literal["pass", "fail", "unscored"]
@@ -77,6 +78,46 @@ def paired_flips(a: Mapping[str, Verdict], b: Mapping[str, Verdict]) -> PairedFl
         neither=counts["fail", "fail"],
         excluded=excluded,
     )
+
+
+@dataclass(frozen=True)
+class ExactMcNemar:
+    """The exact McNemar test on the discordant cases of a paired table.
+
+    Attributes:
+        discordant: cases the two arms decided differently, a_only + b_only.
+        p_value: the two-sided exact binomial p-value that b wins a discordant case half the time.
+    """
+
+    discordant: int
+    p_value: float
+
+
+def exact_mcnemar(flips: PairedFlips) -> ExactMcNemar | None:
+    """Return the exact McNemar test over the discordant cases of `flips`.
+
+    The test is the sign test on the discordant pairs: under the null, each case the arms
+    decide differently falls to b with probability one half. The p-value comes from
+    `statsmodels.stats.contingency_tables.mcnemar(exact=True)`, which reads only the
+    off-diagonal counts. This is the per-case gate of a climb step; the paired-t bound measures
+    repeat noise and needs several repeats before it says anything.
+
+    Returns `None` when there are no discordant cases: the reference call would print 1.0, and a
+    test that could not run is not a p-value.
+
+    Worked example: the matched-pairs sign test of Zar (1999), Biostatistical Analysis, 4th ed.,
+    as given on Wikipedia, "Sign test", section "Example of two-sided sign test for matched
+    pairs": 10 deer, the right hind leg longer in 8 and the left in 2, two-sided p = 0.109375.
+    """
+    discordant = flips.a_only + flips.b_only
+    if discordant == 0:
+        return None
+    result: object = _mcnemar([[0, flips.b_only], [flips.a_only, 0]], exact=True)
+    p_value = getattr(result, "pvalue", None)  # statsmodels returns an untyped Bunch
+    if not isinstance(p_value, float | np.floating):
+        msg = f"statsmodels returned {type(p_value).__name__} for pvalue, not a number"
+        raise TypeError(msg)
+    return ExactMcNemar(discordant=discordant, p_value=float(p_value))
 
 
 def cohen_kappa(a: Sequence[str], b: Sequence[str]) -> float | None:

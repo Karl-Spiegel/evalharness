@@ -3,9 +3,11 @@
 import pytest
 
 from evalharness.stats import (
+    PairedFlips,
     TBound,
     Verdict,
     cohen_kappa,
+    exact_mcnemar,
     krippendorff_alpha,
     paired_flips,
     paired_t_bound,
@@ -101,6 +103,20 @@ def test_paired_flips_excludes_and_counts_unscored_or_missing(
 ) -> None:
     flips = paired_flips(a, b)
     assert (flips.n_paired, flips.both, flips.excluded) == (1, 1, 1)
+
+
+def test_exact_mcnemar_matches_zar_deer_legs_sign_test() -> None:
+    # 10 deer: the right hind leg longer in 8 (b), the left in 2 (a). Two-sided p = 112/1024.
+    flips = PairedFlips(n_paired=10, a_only=2, b_only=8, both=0, neither=0, excluded=0)
+    test = exact_mcnemar(flips)
+    assert test is not None
+    assert test.discordant == 10
+    assert test.p_value == pytest.approx(0.109375, abs=1e-9)
+
+
+def test_exact_mcnemar_is_none_without_discordant_cases() -> None:
+    flips = PairedFlips(n_paired=8, a_only=0, b_only=0, both=5, neither=3, excluded=0)
+    assert exact_mcnemar(flips) is None
 
 
 def test_cohen_kappa_matches_cohen_1960_table_2() -> None:
